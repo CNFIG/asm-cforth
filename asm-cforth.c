@@ -23,13 +23,15 @@ cell CELL=sizeof(cell);
 #define	SYSPATH	".\\system.f"
 
 #define	NEXT		tmpReg=(cell)*(IP++);goto *(cell*)tmpReg;//
-#define	PUSH(X)		*(++DP)=TOS;TOS=X;
-#define	POP(X)		X=TOS;TOS=*(DP--);
+#define	_PUSH		*(++DP)=TOS;
+#define	_POP		TOS=*(DP--);
+#define	PUSH(X)		_PUSH; TOS=X;
+#define	POP(X)		X=TOS; _POP;
 
 
 #define	STACK_LEN	100
 cell DS[STACK_LEN], RS[STACK_LEN], XS[STACK_LEN];//(data | return | X)stack
-cell *_showDS;
+cell *_showSTACK;
 char *new_name=NULL;
 cell**pushh;
 
@@ -88,7 +90,7 @@ int compile(char *s)
 		}
 		s=ignore_blankchar(s);
 	}
-	*tmpLp=_showDS; 
+	*tmpLp=_showSTACK; 
 
 	if (new_name!=NULL)
 		colon(new_name,tmpList);
@@ -112,32 +114,33 @@ void checkcmd(char*s)
 int main() 
 {
 	register cell tmpReg=0;	
-	register cell TOS;		
+	register cell TOS;	
 	register cell** IP;
 	register cell*DP;//stack pointer
 	cell*RP;//stack pointer
 	cell*XP;//stack pointer
 
-	_showDS=&&showDS;
+	_showSTACK=&&showSTACK;
 	dictHead=NULL;
 	word_call_addr=(&&call);
 //	wordNeck=(&&_wordNeck);
 
 
+
+
 pushh=code("push",&&push);
 	code("bye",&&bye);
-	code("dup",&&dup);
-	code("swap",&&swap);
-	code("over",&&over);
-	code("drop",&&drop);
+	code("words",&&words);
 	
 	code(">r",&&tor);
 	code("r>",&&rto);
 	code("r@",&&rat);
+	code("dropr",&&dropr);
 
-	code(">t",&&tot);
-	code("t>",&&tto);
-	code("t@",&&tat);
+	code(">x",&&tox);
+	code("x>",&&xto);
+	code("x@",&&xat);
+	code("dropx",&&dropx);
 
 	code("+",&&add);
 	code("-",&&sub);
@@ -145,12 +148,19 @@ pushh=code("push",&&push);
 	code("/",&&divv);
 
 
-	code("words",&&words);
 
 
 	code("ret",&&ret);
 	code(";",&&ret);
-	code("call",&&call);
+
+
+	code("swaps",&&swaps);
+	code("swap",&&swap);
+	code("drops",&&drops);
+	code("drop",&&drop);
+	code("over",&&over);
+	code("dup",&&dup);
+
 
 
 
@@ -179,18 +189,25 @@ loadsys:
 	printf("-------------------------\n");
 	printf("asm-cforth version 0.1------made by ear\nplease input 'words' to see the dictionary\n");
 init:
-	DP=DS-1;//*DP=0;
-	RP=RS-1;//*RP=0;
-	XP=XS-1;//*XP=0;
+	DP=DS-1;
+	RP=RS-1;
+	XP=XS-1;
 	tmpLp=tmpList;
 	DEBUG("INIT()")
 //	DS[0]=123;DS[1]=456;DP=DS+2;
 
-showDS:
+showSTACK:
 	printf("DS> ");
-	cell*i=DS;
-	for (;i<=DP ;i++ )
-		printf("%d ",*i);
+	cell*i;
+	i=DS+1;
+	if (DP>=DS)
+	{
+		while (i<=DP)
+		{
+			printf("%d ",*i++);
+		}
+		printf("%d ",TOS);
+	}
 	printf("\n");
 /*
 	printf("tmplist> ");
@@ -226,30 +243,36 @@ cmd_line:
 
 
 
+
 //DATA STACK OPERATE 
-swap:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
-push:	DP++;*DP=(cell)*IP++;	NEXT
-dup:		DEBUG("entering: dup")	 DP++;*DP=*(DP-1);	 NEXT
-over:		*(DP+1)=*(DP-1);DP++;	NEXT
-drop:	DP--;	NEXT
+push:	PUSH((cell)*IP++)	NEXT
+dup:		DEBUG("entering: dup")
+		_PUSH			NEXT
+over:		PUSH(*(DP-1))	NEXT
+drop:	_POP			NEXT
+drops:	DP--;			NEXT
+swap:	tmpReg=*DP; *DP=TOS; TOS=tmpReg;			NEXT
+swaps:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
 //RETURN STACK
-tor:		RP++;*RP=*DP;DP--;	NEXT
-rto:		DP++;*DP=*RP;RP--;	NEXT
-rat:		DP++;*DP=*RP;	NEXT
+tor:		POP(*(++RP))		NEXT
+rto:		PUSH(*RP--)		NEXT
+rat:		PUSH(*RP)		NEXT
+dropr:	RP--;			NEXT
 //X STACK
-tot:		XP++;*XP=*DP;DP--;	NEXT
-tto:		DP++;*DP=*XP;XP--;	NEXT
-tat:		DP++;*DP=*XP;	NEXT
-//+-* /
-add:		*(DP-1)=*(DP-1)+(*DP); DP--;	NEXT
-sub:		*(DP-1)=*(DP-1)-(*DP); DP--;	NEXT
-mul:		*(DP-1)=*(DP-1)*(*DP); DP--;	NEXT
-divv:		*(DP-1)=*(DP-1)/(*DP); DP--;	NEXT
+tox:		POP(*(++XP))		NEXT
+xto:		PUSH(*XP--)		NEXT
+xat:		PUSH(*XP)		NEXT
+dropx:	XP--;			NEXT
+//+*- /
+add:		TOS+=(*DP); DP--;	 	NEXT
+mul:		TOS*=(*DP); DP--;		NEXT
+sub:		TOS=(*DP)-TOS; DP--;	NEXT
+divv:		TOS=(*DP)/TOS; DP--;	NEXT
 
 
 
 
-	word* wtmp;	 
+		word* wtmp;
 words:	wtmp=dictHead;
 		do{
 			printf("%s ",wtmp->name);
@@ -265,7 +288,7 @@ words:	wtmp=dictHead;
 ret:		IP=(cell**)*RP--;	DEBUG("entering: ret")	NEXT
 
 call:		*(++RP)=(cell)IP;
-		IP=(cell**)(tmpReg+ wordNeck_len);
+		IP=(cell**)( tmpReg+ wordNeck_len);
 		DEBUG("entering: call")
 		NEXT
 
