@@ -22,7 +22,7 @@ cell CELL=sizeof(cell);
 
 #define	SYSPATH	".\\system.f"
 
-#define	NEXT	goto *(*((++IP)-1));//
+#define	NEXT	tmp=(cell)*(IP++);goto *(cell*)tmp;//
 #define	PUSH(X)		*(++DP)=X;
 #define	POP(X)		X=*(DP--);
 
@@ -111,6 +111,7 @@ void checkcmd(char*s)
 		
 int main() 
 {
+	register cell tmp=0;	
 	register cell** IP;
 	register cell*DP;//stack pointer
 	cell*RP;//stack pointer
@@ -224,8 +225,6 @@ cmd_line:
 
 
 
-
-	cell tmp=0;	word* wtmp;
 //DATA STACK OPERATE 
 swap:	tmp=*DP; *DP=*(DP-1); *(DP-1)=tmp;	NEXT
 push:	DP++;*DP=(cell)*IP++;	NEXT
@@ -249,7 +248,7 @@ divv:		*(DP-1)=*(DP-1)/(*DP); DP--;	NEXT
 
 
 
-		 
+	word* wtmp;	 
 words:	wtmp=dictHead;
 		do{
 			printf("%s ",wtmp->name);
@@ -265,7 +264,7 @@ words:	wtmp=dictHead;
 ret:		IP=(cell**)*RP--;	DEBUG("entering: ret")	NEXT
 
 call:		*(++RP)=(cell)IP;
-		IP=(cell**)((cell)(*(IP-1)) + wordNeck_len);
+		IP=(cell**)( tmp+ wordNeck_len);
 		DEBUG("entering: call")
 		NEXT
 
