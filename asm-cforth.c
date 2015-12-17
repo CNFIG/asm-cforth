@@ -203,9 +203,7 @@ showSTACK:
 	if (DP>=DS)
 	{
 		while (i<=DP)
-		{
 			printf("%d ",*i++);
-		}
 		printf("%d ",TOS);
 	}
 	printf("\n");
@@ -246,12 +244,12 @@ cmd_line:
 
 //DATA STACK OPERATE 
 push:	PUSH((cell)*IP++)	NEXT
-dup:		DEBUG("entering: dup")
-		_PUSH			NEXT
-over:		PUSH(*(DP-1))	NEXT
+dup:	DEBUG("entering: dup")
+	_PUSH			NEXT
+over:	PUSH(*(DP-1))	NEXT
 drop:	_POP			NEXT
 drops:	DP--;			NEXT
-swap:	tmpReg=*DP; *DP=TOS; TOS=tmpReg;			NEXT
+swap:	tmpReg=*DP; *DP=TOS; TOS=tmpReg;		NEXT
 swaps:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
 //RETURN STACK
 tor:		POP(*(++RP))		NEXT
