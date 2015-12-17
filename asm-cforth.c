@@ -22,9 +22,9 @@ cell CELL=sizeof(cell);
 
 #define	SYSPATH	".\\system.f"
 
-#define	NEXT	tmp=(cell)*(IP++);goto *(cell*)tmp;//
-#define	PUSH(X)		*(++DP)=X;
-#define	POP(X)		X=*(DP--);
+#define	NEXT		tmpReg=(cell)*(IP++);goto *(cell*)tmpReg;//
+#define	PUSH(X)		*(++DP)=TOS;TOS=X;
+#define	POP(X)		X=TOS;TOS=*(DP--);
 
 
 #define	STACK_LEN	100
@@ -111,7 +111,8 @@ void checkcmd(char*s)
 		
 int main() 
 {
-	register cell tmp=0;	
+	register cell tmpReg=0;	
+	register cell TOS;		
 	register cell** IP;
 	register cell*DP;//stack pointer
 	cell*RP;//stack pointer
@@ -176,7 +177,7 @@ loadsys:
 	printf("-------------------------");
 	printf(loadInf);	 printf(" to load system");
 	printf("-------------------------\n");
-	printf("asm-cforth version 0.1\nplease input 'words' to see the dictionary\n");
+	printf("asm-cforth version 0.1------made by ear\nplease input 'words' to see the dictionary\n");
 init:
 	DP=DS-1;//*DP=0;
 	RP=RS-1;//*RP=0;
@@ -226,7 +227,7 @@ cmd_line:
 
 
 //DATA STACK OPERATE 
-swap:	tmp=*DP; *DP=*(DP-1); *(DP-1)=tmp;	NEXT
+swap:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
 push:	DP++;*DP=(cell)*IP++;	NEXT
 dup:		DEBUG("entering: dup")	 DP++;*DP=*(DP-1);	 NEXT
 over:		*(DP+1)=*(DP-1);DP++;	NEXT
@@ -264,7 +265,7 @@ words:	wtmp=dictHead;
 ret:		IP=(cell**)*RP--;	DEBUG("entering: ret")	NEXT
 
 call:		*(++RP)=(cell)IP;
-		IP=(cell**)( tmp+ wordNeck_len);
+		IP=(cell**)(tmpReg+ wordNeck_len);
 		DEBUG("entering: call")
 		NEXT
 
