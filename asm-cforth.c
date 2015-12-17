@@ -4,7 +4,7 @@
 
 #define	DEBUGER  CLOSE
 #ifndef	DEBUGER 
-#define	DEBUG(str)	printf("[DEBUG]%s\n",str);
+#define	DEBUG(str)		printf("[DEBUG]%s\n",str);
 #define	DEBUG2(str1,str2)	printf("[DEBUG]%s %s\n",str1,str2);
 #else
 #define	DEBUG(str)	
@@ -246,49 +246,50 @@ cmd_line:
 push:	PUSH((cell)*IP++)	NEXT
 dup:	DEBUG("entering: dup")
 	_PUSH			NEXT
-over:	PUSH(*(DP-1))	NEXT
+over:	PUSH(*(DP-1))		NEXT
 drop:	_POP			NEXT
 drops:	DP--;			NEXT
 swap:	tmpReg=*DP; *DP=TOS; TOS=tmpReg;		NEXT
 swaps:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
 //RETURN STACK
-tor:		POP(*(++RP))		NEXT
-rto:		PUSH(*RP--)		NEXT
-rat:		PUSH(*RP)		NEXT
+tor:	POP(*(++RP))		NEXT
+rto:	PUSH(*RP--)		NEXT
+rat:	PUSH(*RP)		NEXT
 dropr:	RP--;			NEXT
 //X STACK
-tox:		POP(*(++XP))		NEXT
-xto:		PUSH(*XP--)		NEXT
-xat:		PUSH(*XP)		NEXT
+tox:	POP(*(++XP))		NEXT
+xto:	PUSH(*XP--)		NEXT
+xat:	PUSH(*XP)		NEXT
 dropx:	XP--;			NEXT
 //+*- /
-add:		TOS+=(*DP); DP--;	 	NEXT
-mul:		TOS*=(*DP); DP--;		NEXT
-sub:		TOS=(*DP)-TOS; DP--;	NEXT
-divv:		TOS=(*DP)/TOS; DP--;	NEXT
+add:	TOS+=(*DP); DP--;	NEXT
+mul:	TOS*=(*DP); DP--;	NEXT
+sub:	TOS=(*DP)-TOS; DP--;	NEXT
+divv:	TOS=(*DP)/TOS; DP--;	NEXT
 
 
 
 
-		word* wtmp;
+	word* wtmp;
 words:	wtmp=dictHead;
-		do{
-			printf("%s ",wtmp->name);
-		} while(wtmp=wtmp->next);
-		printf("\n");
-		NEXT
+	do{
+		printf("%s ",wtmp->name);
+	} while(wtmp=wtmp->next);
+	printf("\n");
+	NEXT
 		
 
 
 
 
 //_wordNeck:	goto *(int*)word_call_addr;
-ret:		IP=(cell**)*RP--;	DEBUG("entering: ret")	NEXT
+ret:	DEBUG("entering: ret")	
+	IP=(cell**)*RP--;	NEXT
 
-call:		*(++RP)=(cell)IP;
-		IP=(cell**)( tmpReg+ wordNeck_len);
-		DEBUG("entering: call")
-		NEXT
+call:	DEBUG("entering: call")
+	*(++RP)=(cell)IP;
+	IP=(cell**)( tmpReg+ wordNeck_len);
+	NEXT
 
-bye:		return 0;
+bye:	return 0;
 }
