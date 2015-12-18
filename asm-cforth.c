@@ -12,11 +12,7 @@
 #endif 
 
 
-#ifdef _WIN64
-#define	cell	long long	//for 64bits
-#else
-#define	cell	long		//for 32bits
-#endif 
+#define	cell	int		//only for 32bits
 
 cell CELL=sizeof(cell); 
 
@@ -41,26 +37,29 @@ cell**pushh;
 
 #include "str.h"
 
-
+#define	dictNum	2
+word * dict[dictNum];
+void dictIndexInit()	{dict[0]=codeDictHead,dict[1]=colonDictHead;}
 
 int search_word(char *w)
 {
-	word * dict=dictHead;
-	while (strcmp(dict->name,w))
+	dictIndexInit();
+	int d=0;
+	for (; d<dictNum; d++)
 	{
-		dict=dict->next;
-		if(dict==NULL)
+		do
 		{
-			if (!is_num(w))	 return 0;
-			//转换成数字
-			*tmpLp=(cell*)pushh;	tmpLp++;
-			*tmpLp=(cell*)atoi(w);	tmpLp++;
-			return 1;			
-		}
-	}DEBUG2("success find:",w)
-	
-	*tmpLp=(cell*)(dict->addr);	tmpLp++;
-	return 1;
+			if (!strcmp(dict[d]->name,w))
+			{
+				DEBUG2("success find:",w)
+				*tmpLp=(cell*)(dict[d]->addr);
+				tmpLp++;
+				return 1;
+			}
+		}while(dict[d]=dict[d]->next);
+	}
+	return 0;
+
 }
 
 
@@ -85,8 +84,16 @@ int compile(char *s)
 
 		if(!search_word(w) )
 		{
-			printf("[%s]?\n",w);
-			return 0;
+			if (is_num(w))
+			{//转换成数字
+				*tmpLp=(cell*)pushh;	tmpLp++;
+				*tmpLp=(cell*)atoi(w);	tmpLp++;
+			}
+			else
+			{
+				printf("[%s]?\n",w);
+				return 0;
+			}
 		}
 		s=ignore_blankchar(s);
 	}
@@ -121,7 +128,6 @@ int main()
 	cell*XP;//stack pointer
 
 	_showSTACK=&&showSTACK;
-	dictHead=NULL;
 	word_call_addr=(&&call);
 //	wordNeck=(&&_wordNeck);
 
@@ -147,18 +153,15 @@ pushh=code("push",&&push);
 	code("*",&&mul);
 	code("/",&&divv);
 
-
-
-
 	code("ret",&&ret);
 	code(";",&&ret);
-
 
 	code("swaps",&&swaps);
 	code("swap",&&swap);
 	code("drops",&&drops);
 	code("drop",&&drop);
 	code("over",&&over);
+	code("dups",&&dups);
 	code("dup",&&dup);
 
 
@@ -249,6 +252,7 @@ dup:	DEBUG("entering: dup")
 over:	PUSH(*(DP-1))		NEXT
 drop:	_POP			NEXT
 drops:	DP--;			NEXT
+dups:	tmpReg=*DP;*(++DP)=tmpReg;			NEXT
 swap:	tmpReg=*DP; *DP=TOS; TOS=tmpReg;		NEXT
 swaps:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
 //RETURN STACK
@@ -265,17 +269,22 @@ dropx:	XP--;			NEXT
 add:	TOS+=(*DP); DP--;	NEXT
 mul:	TOS*=(*DP); DP--;	NEXT
 sub:	TOS=(*DP)-TOS; DP--;	NEXT
-divv:	TOS=(*DP)/TOS; DP--;	NEXT
+divv:	if (!TOS){printf("error: 0 / \n");goto init;}
+	TOS=(*DP)/TOS; DP--;	NEXT
 
 
 
 
-	word* wtmp;
-words:	wtmp=dictHead;
-	do{
-		printf("%s ",wtmp->name);
-	} while(wtmp=wtmp->next);
-	printf("\n");
+	
+words:	dictIndexInit();
+	int d;
+	for (d=0;d<dictNum ; d++)
+	{
+		do{
+			printf("%s ",dict[d]->name);
+		} while(dict[d]=dict[d]->next);
+		printf("\n");
+	}
 	NEXT
 		
 
