@@ -14,12 +14,13 @@ cell*tmpList[CMDSTR_LEN/4];
 cell** tmpLp=tmpList;
 
 
-word*dictHead;
+word*codeDictHead=NULL, *colonDictHead=NULL;
+
 cell** code(char*s, cell** addr)
 {
 	word *w=(word*)malloc(sizeof(word));
-	w->next=dictHead;
-	dictHead=w;
+	w->next=codeDictHead;
+	codeDictHead=w;
 	w->addr=addr;
 	w->name=s;
 	return w->addr;
@@ -32,8 +33,8 @@ char*word_call_addr;
 void colon(char*s, cell** addr)
 {
 	word *w=(word*)malloc(sizeof(word));
-	w->next=dictHead;
-	dictHead=w;
+	w->next=colonDictHead;
+	colonDictHead=w;
 
 	w->name=(char*)malloc(strlen(s)+1);
 	strcpy(w->name,s);
