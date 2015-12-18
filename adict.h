@@ -2,6 +2,7 @@ struct _word
 {
 	struct _word * next;
 	char*name;
+	char checkCode;
 	cell**addr;
 };
 typedef struct _word word;
@@ -23,6 +24,9 @@ cell** code(char*s, cell** addr)
 	codeDictHead=w;
 	w->addr=addr;
 	w->name=s;
+	w->checkCode=0;
+	while (*s)
+		w->checkCode^=*s++;
 	return w->addr;
 }
 
@@ -38,6 +42,10 @@ void colon(char*s, cell** addr)
 
 	w->name=(char*)malloc(strlen(s)+1);
 	strcpy(w->name,s);
+	
+	w->checkCode=0;
+	while (*s)
+		w->checkCode^=*s++;
 
 	cell n=(cell)tmpLp-(cell)tmpList;
 	w->addr=(cell**)malloc(wordNeck_len+n);
