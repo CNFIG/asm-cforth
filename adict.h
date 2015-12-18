@@ -15,18 +15,37 @@ cell*tmpList[CMDSTR_LEN/4];
 cell** tmpLp=tmpList;
 
 
-word*codeDictHead=NULL, *colonDictHead=NULL;
+word *immeDictHead=NULL, *codeDictHead=NULL, *colonDictHead=NULL;
+
+char computeCheckCode(char*s)
+{
+	char code=0;
+	while (*s)
+		code^=*s++;
+	return *(--s)+code;
+}
+
+word * creatWord(char*s, cell** addr)
+{
+	word *w=(word*)malloc(sizeof(word));
+	w->checkCode=computeCheckCode(s);
+	w->name=s;
+	w->addr=addr;
+	return w;
+}
+
+void immediate(char*s, cell** addr)
+{
+	word *w=creatWord(s,addr);
+	w->next=immeDictHead;
+	immeDictHead=w;
+}
 
 cell** code(char*s, cell** addr)
 {
-	word *w=(word*)malloc(sizeof(word));
+	word *w=creatWord(s,addr);
 	w->next=codeDictHead;
 	codeDictHead=w;
-	w->addr=addr;
-	w->name=s;
-	w->checkCode=0;
-	while (*s)
-		w->checkCode^=*s++;
 	return w->addr;
 }
 
@@ -37,15 +56,10 @@ char*word_call_addr;
 void colon(char*s, cell** addr)
 {
 	word *w=(word*)malloc(sizeof(word));
-	w->next=colonDictHead;
-	colonDictHead=w;
+	w->checkCode=computeCheckCode(s);
 
 	w->name=(char*)malloc(strlen(s)+1);
 	strcpy(w->name,s);
-	
-	w->checkCode=0;
-	while (*s)
-		w->checkCode^=*s++;
 
 	cell n=(cell)tmpLp-(cell)tmpList;
 	w->addr=(cell**)malloc(wordNeck_len+n);
@@ -54,8 +68,12 @@ void colon(char*s, cell** addr)
 	char*charP=(char*)w->addr; 
 	*charP=0xE9;
 	//计算跳转偏移地址
-	*(cell*)(charP+1)=(cell)word_call_addr  -  wordNeck_len  -  (cell)(w->addr);
+	*(int*)(charP+1)=(int)word_call_addr - wordNeck_len - (int)(w->addr);
 
 //	memcpy(w->addr, wordNeck, wordNeck_len);
 	memcpy((charP+wordNeck_len), addr, n);
+
+	
+	w->next=colonDictHead;
+	colonDictHead=w;
 }
