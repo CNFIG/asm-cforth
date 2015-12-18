@@ -24,8 +24,9 @@ cell CELL=sizeof(cell);
 #define	PUSH(X)		_PUSH; TOS=X;
 #define	POP(X)		X=TOS; _POP;
 
+char EOS=' ';//end of string
 
-#define	STACK_LEN	100
+#define	STACK_LEN	256
 cell DS[STACK_LEN], RS[STACK_LEN], XS[STACK_LEN];//(data | return | X)stack
 cell *_showSTACK;
 char *new_name=NULL;
@@ -43,13 +44,17 @@ void dictIndexInit()	{dict[0]=codeDictHead,dict[1]=colonDictHead;}
 
 int search_word(char *w)
 {
+	char check_code=0, *tmp=w;
+	while(*tmp)
+		check_code^=*tmp++;
+
 	dictIndexInit();
 	int d=0;
 	for (; d<dictNum; d++)
 	{
 		do
 		{
-			if (!strcmp(dict[d]->name,w))
+			if (check_code==dict[d]->checkCode && !strcmp(dict[d]->name,w))
 			{
 				DEBUG2("success find:",w)
 				*tmpLp=(cell*)(dict[d]->addr);
@@ -281,7 +286,7 @@ words:	dictIndexInit();
 	for (d=0;d<dictNum ; d++)
 	{
 		do{
-			printf("%s ",dict[d]->name);
+			printf("[%d]%s ",dict[d]->checkCode,dict[d]->name);
 		} while(dict[d]=dict[d]->next);
 		printf("\n");
 	}
