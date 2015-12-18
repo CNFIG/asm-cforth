@@ -44,9 +44,7 @@ void dictIndexInit()	{dict[0]=codeDictHead,dict[1]=colonDictHead;}
 
 int search_word(char *w)
 {
-	char check_code=0, *tmp=w;
-	while(*tmp)
-		check_code^=*tmp++;
+	char check_code=computeCheckCode(w);
 
 	dictIndexInit();
 	int d=0;
