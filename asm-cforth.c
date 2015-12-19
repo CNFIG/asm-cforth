@@ -11,26 +11,37 @@
 #define	DEBUG2(str1,str2)	
 #endif 
 
-
+typedef void(*fnp)();		//funcion pointer
 #define	cell	int		//only for 32bits
 
 cell CELL=sizeof(cell); 
 
 #define	SYSPATH	".\\system.f"
 
-#define	NEXT		tmpReg=(cell)*(IP++);goto *(cell*)tmpReg;//
+#define	NEXT		tmpReg=(cell)*(IP++);goto *(cell*)tmpReg;
 #define	_PUSH		*(++DP)=TOS;
 #define	_POP		TOS=*(DP--);
 #define	PUSH(X)		_PUSH; TOS=X;
 #define	POP(X)		X=TOS; _POP;
+#define	TMPLP_NEXT(X)	*(tmpLp++)=(cell*)X;
 
 char EOS=' ';//end of string
 
 #define	STACK_LEN	256
 cell DS[STACK_LEN], RS[STACK_LEN], XS[STACK_LEN];//(data | return | X)stack
+static	cell*RP;//stack pointer
+static	cell*XP;//stack pointer	
+
 cell *_showSTACK;
 char *new_name=NULL;
+
+
 cell**pushh;
+cell**zbranchh;
+cell**branchh;
+cell**torr;
+cell**casee;
+cell**droprr;
 
 
 
@@ -38,9 +49,14 @@ cell**pushh;
 
 #include "str.h"
 
-#define	dictNum	2
+#define	dictNum	3
 word * dict[dictNum];
-void dictIndexInit()	{dict[0]=codeDictHead,dict[1]=colonDictHead;}
+void dictIndexInit()
+{
+	dict[0]=immeDictHead;
+	dict[1]=codeDictHead;
+	dict[2]=colonDictHead;
+}
 
 int search_word(char *w)
 {
@@ -50,17 +66,21 @@ int search_word(char *w)
 	int d=0;
 	for (; d<dictNum; d++)
 	{
+		if (dict[d]==NULL) break;
 		do
 		{
 			if (check_code==dict[d]->checkCode && !strcmp(dict[d]->name,w))
 			{
 				DEBUG2("success find:",w)
-				*tmpLp=(cell*)(dict[d]->addr);
-				tmpLp++;
+				if (d==0)
+					((fnp)(dict[d]->addr))();
+				else
+					TMPLP_NEXT(dict[d]->addr);
 				return 1;
 			}
 		}while(dict[d]=dict[d]->next);
 	}
+				
 	return 0;
 
 }
@@ -88,9 +108,9 @@ int compile(char *s)
 		if(!search_word(w) )
 		{
 			if (is_num(w))
-			{//转换成数字
-				*tmpLp=(cell*)pushh;	tmpLp++;
-				*tmpLp=(cell*)atoi(w);	tmpLp++;
+			{//change to number
+				TMPLP_NEXT(pushh);
+				TMPLP_NEXT(atoi(w));
 			}
 			else
 			{
@@ -104,7 +124,7 @@ int compile(char *s)
 
 	if (new_name!=NULL)
 		colon(new_name,tmpList);
-	tmpLp=tmpList;//临时区复原
+	tmpLp=tmpList;
 	return 1;
 }
 
@@ -120,26 +140,39 @@ void checkcmd(char*s)
 		s++;
 	*s=0;
 }
-		
+
+
 int main() 
 {
-	register cell tmpReg=0;	
-	register cell TOS;	
-	register cell** IP;
-	register cell*DP;//stack pointer
-	cell*RP;//stack pointer
-	cell*XP;//stack pointer
+pushh	=&&push;
+zbranchh=&&zbranch;
+branchh	=&&branch;
+torr	=&&tor;
+casee	=&&_casee;
+droprr	=&&dropr;
+
+static	register cell tmpReg=0;	
+static	register cell TOS;	
+static	register cell** IP;
+static	register cell*DP;//stack pointer
 
 	_showSTACK=&&showSTACK;
 	word_call_addr=(&&call);
 //	wordNeck=(&&_wordNeck);
 
 
-
-
-pushh=code("push",&&push);
+	code("push",&&push);
 	code("bye",&&bye);
 	code("words",&&words);
+
+
+	code("branch",&&branch);
+	code("0branch",&&zbranch);
+
+	code("u>",&&uabove);
+	code(">",&&above);
+	code("==",&&equ);
+
 	
 	code(">r",&&tor);
 	code("r>",&&rto);
@@ -169,6 +202,20 @@ pushh=code("push",&&push);
 
 
 
+	//immeDict
+	immediate("if",(cell**)_if);
+	immediate("endif",(cell**)_endif);
+	immediate("else",(cell**)_else);
+	immediate("switch",(cell**)_switch);
+	immediate("case",(cell**)_case);
+	immediate("break",(cell**)_else);
+	immediate("ends",(cell**)_ends);
+
+
+	DP=DS-1;
+	RP=RS-1;
+	XP=XS-1;
+	tmpLp=tmpList;
 
 	FILE*fp;
 	char *loadInf="succeed";
@@ -180,7 +227,7 @@ loadsys:
 	{
 		while (fgets(cmdstr,CMDSTR_LEN,fp))
 		{
-			printf("%s\n",cmdstr);
+			printf("%s",cmdstr);
 			checkcmd(cmdstr);
 			if (!compile(cmdstr))
 			{
@@ -190,7 +237,7 @@ loadsys:
 		}
 	}
 	fclose(fp);
-	printf("-------------------------");
+	printf("\n-------------------------");
 	printf(loadInf);	 printf(" to load system");
 	printf("-------------------------\n");
 	printf("asm-cforth version 0.1------made by ear\nplease input 'words' to see the dictionary\n");
@@ -216,7 +263,7 @@ showSTACK:
 /*
 	printf("tmplist> ");
 	cell** j=tmpList;
-	for (;j<=tmpLp+5 ;j++ )
+	for (;j<=tmpLp+15 ;j++ )
 		printf("%d ",*j);
 	printf("\n");
 //*/
@@ -236,7 +283,8 @@ cmd_line:
 	else 
 	{
 		if (new_name !=NULL)
-			goto cmd_line;
+		//	goto cmd_line;
+			goto showSTACK;
 
 		DEBUG("entering: explain")
 		IP=tmpList;
@@ -275,9 +323,24 @@ sub:	TOS=(*DP)-TOS; DP--;	NEXT
 divv:	if (!TOS){printf("error: 0 / \n");goto init;}
 	TOS=(*DP)/TOS; DP--;	NEXT
 
+branch:	IP+=(cell)(*(IP));	NEXT
+zbranch:	if(TOS)
+zbranch1:		IP++;
+		else
+zbranch2:		IP+=(cell)(*(IP));
+		_POP NEXT
+_casee:	if(*RP==TOS)	goto zbranch1;
+	else		goto zbranch2;
 
 
 
+
+
+//cmp sign
+equ:	TOS-=*DP--; TOS= !TOS;	NEXT
+above:	TOS=((*DP--)>TOS);	NEXT
+uabove:	TOS=((unsigned cell)*(DP--) > (unsigned cell)TOS);
+	NEXT
 	
 words:	dictIndexInit();
 	int d;
