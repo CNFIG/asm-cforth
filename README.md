@@ -13,19 +13,19 @@ forth是一种堆栈机,使用后缀表达式,冒号是定义函数的符号,以
 
 显示 33 33
 
-:s
+	:s
 
-switch 
+	switch 
 
-	1 case 11 break 
+		1 case 11 break 
 	
-	2 case 22 break
+		2 case 22 break
 	
-	3 case 33 break 
+		3 case 33 break 
 	
-	default case 55 break
+		default case 55 break
 	
-ends ;
+	ends ;
 
 1 s 显示11
 
@@ -34,13 +34,13 @@ ends ;
 switch的另一种用法
 
 
-true switch
+	true switch
 
-  1 2 < case 11 break
+		1 2 < case 11 break
   
-  1 2 == case 22 break
+		1 2 == case 22 break
   
-ends
+	ends
 
 
 
