@@ -165,6 +165,8 @@ static	register cell*DP;//stack pointer
 	code("bye",&&bye);
 	code("words",&&words);
 
+	code("sameAs",&&sameAs);
+	code("exec",&&exec);
 
 	code("branch",&&branch);
 	code("0branch",&&zbranch);
@@ -218,13 +220,36 @@ static	register cell*DP;//stack pointer
 	tmpLp=tmpList;
 
 	FILE*fp;
+	char ch;
+	char*chp;
 	char *loadInf="succeed";
-loadsys:	
+loadsys:
 	fp=fopen(SYSPATH,"r");
 	if (fp==NULL)
 		loadInf="FAIL";
 	else
 	{
+		chp=cmdstr;
+		while(1)
+		{
+			ch=fgetc(fp);
+			putchar(ch);
+			*chp=ch;
+			if (*(chp-1)==';' && is_blankchar(*(chp-2)) && (is_blankchar(ch) || ch==EOF) )
+			{
+				*chp='\0';//printf("%s\n",cmdstr);
+			//*	
+				if (!compile(cmdstr))
+				{
+					loadInf="FAIL";
+					break;
+				}//*/
+				chp=cmdstr-1;
+			}
+			if(ch==EOF) break;
+			chp++;
+		}
+/*
 		while (fgets(cmdstr,CMDSTR_LEN,fp))
 		{
 			printf("%s",cmdstr);
@@ -235,6 +260,7 @@ loadsys:
 				break;
 			}
 		}
+//*/
 	}
 	fclose(fp);
 	printf("\n-------------------------");
@@ -332,6 +358,8 @@ zbranch2:		IP+=(cell)(*(IP));
 _casee:	if(*RP==TOS)	goto zbranch1;
 	else		goto zbranch2;
 
+exec:	tmpReg=TOS; _POP; goto *(cell*)tmpReg;
+sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
 
 
 
