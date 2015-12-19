@@ -1,19 +1,17 @@
 struct _word
 {
-	struct _word * next;
 	char*name;
 	char checkCode;
 	cell**addr;
+	struct _word * next;
 };
 typedef struct _word word;
 
-
-//缓存区
+//
 #define	CMDSTR_LEN	1024
 char cmdstr[CMDSTR_LEN];
 cell*tmpList[CMDSTR_LEN/4];
 cell** tmpLp=tmpList;
-
 
 word *immeDictHead=NULL, *codeDictHead=NULL, *colonDictHead=NULL;
 
@@ -49,7 +47,6 @@ cell** code(char*s, cell** addr)
 	return w->addr;
 }
 
-
 #define wordNeck_len	5
 char*word_call_addr;
 //char*wordNeck;
@@ -67,7 +64,7 @@ void colon(char*s, cell** addr)
 	//jmp to label call
 	char*charP=(char*)w->addr; 
 	*charP=0xE9;
-	//计算跳转偏移地址
+	//compute jump adrress
 	*(int*)(charP+1)=(int)word_call_addr - wordNeck_len - (int)(w->addr);
 
 //	memcpy(w->addr, wordNeck, wordNeck_len);
@@ -76,4 +73,25 @@ void colon(char*s, cell** addr)
 	
 	w->next=colonDictHead;
 	colonDictHead=w;
+}
+
+#define	IF_ELSE		*(++XP)=(cell)tmpLp++;
+
+void _if()	{TMPLP_NEXT(zbranchh);	IF_ELSE;}
+void _endif()	{*(cell*)*XP=tmpLp-(cell**)*XP;	XP--;}
+void _else()
+{
+	TMPLP_NEXT(branchh);
+	tmpLp++; _endif();
+	tmpLp--; IF_ELSE;
+}
+
+void _switch()	{*(++RP)=0; TMPLP_NEXT(torr);}
+void _case()	{(*RP)++;TMPLP_NEXT(casee);IF_ELSE;}
+void _ends()
+{
+	*(tmpLp)=(cell*)droprr;
+	for(;(*RP)>0;(*RP)--)
+		_endif();
+	RP--;tmpLp++;
 }
