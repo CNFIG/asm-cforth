@@ -23,7 +23,7 @@ forth是一种堆栈机,使用后缀表达式,冒号是定义函数的符号,以
 	
 		3 case 33 break 
 	
-		default case 55 break
+		default  55 
 	
 	ends ;
 
