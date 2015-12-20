@@ -86,12 +86,12 @@ void _else()
 	tmpLp--; IF_ELSE;
 }
 
-void _switch()	{*(++RP)=0; TMPLP_NEXT(torr);}
+void _switch()	{*(++RP)=0;}
 void _case()	{(*RP)++;TMPLP_NEXT(casee);IF_ELSE;}
 void _ends()
 {
-	*(tmpLp)=(cell*)droprr;
 	for(;(*RP)>0;(*RP)--)
 		_endif();
-	RP--;tmpLp++;
+	RP--;
 }
+void _while()	{}
