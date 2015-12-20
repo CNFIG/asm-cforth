@@ -165,6 +165,8 @@ static	register cell*DP;//stack pointer
 	code("bye",&&bye);
 	code("words",&&words);
 
+	code("loop",&&loop);
+
 	code("sameAs",&&sameAs);
 	code("exec",&&exec);
 
@@ -212,6 +214,7 @@ static	register cell*DP;//stack pointer
 	immediate("case",(cell**)_case);
 	immediate("break",(cell**)_else);
 	immediate("ends",(cell**)_ends);
+	immediate("while",(cell**)_while);
 
 
 	DP=DS-1;
@@ -230,6 +233,7 @@ loadsys:
 	else
 	{
 		chp=cmdstr;
+//*
 		while(1)
 		{
 			ch=fgetc(fp);
@@ -238,18 +242,18 @@ loadsys:
 			if (*(chp-1)==';' && is_blankchar(*(chp-2)) && (is_blankchar(ch) || ch==EOF) )
 			{
 				*chp='\0';//printf("%s\n",cmdstr);
-			//*	
+				
 				if (!compile(cmdstr))
 				{
 					loadInf="FAIL";
 					break;
-				}//*/
+				}
 				chp=cmdstr-1;
 			}
 			if(ch==EOF) break;
 			chp++;
 		}
-/*
+/*/
 		while (fgets(cmdstr,CMDSTR_LEN,fp))
 		{
 			printf("%s",cmdstr);
@@ -286,11 +290,11 @@ showSTACK:
 		printf("%d ",TOS);
 	}
 	printf("\n");
-/*
+//*
 	printf("tmplist> ");
 	cell** j=tmpList;
-	for (;j<=tmpLp+15 ;j++ )
-		printf("%d ",*j);
+	while (*j != (&&showSTACK) )
+		printf("%d ",*j++);
 	printf("\n");
 //*/
 /*
@@ -355,12 +359,17 @@ zbranch1:		IP++;
 		else
 zbranch2:		IP+=(cell)(*(IP));
 		_POP NEXT
-_casee:	if(*RP==TOS)	goto zbranch1;
+
+_casee:	if(*DP==TOS)
+		{DP--;	goto zbranch1;}
 	else		goto zbranch2;
 
 exec:	tmpReg=TOS; _POP; goto *(cell*)tmpReg;
 sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
 
+loop:	IP=(cell**)*RP;	NEXT
+	
+//IP=TOS; _POP; NEXT
 
 
 
@@ -374,6 +383,7 @@ words:	dictIndexInit();
 	int d;
 	for (d=0;d<dictNum ; d++)
 	{
+		if (dict[d]==NULL) break;
 		do{
 			printf("[%d]%s ",dict[d]->checkCode,dict[d]->name);
 		} while(dict[d]=dict[d]->next);
