@@ -44,11 +44,12 @@ cell**branchh;
 cell**torr;
 cell**casee;
 cell**droprr;
+cell**dropr44;
 cell**doo;
 cell**breakk;
 cell**loopp;
+cell**forr;
 cell**nextt;
-
 
 
 #include "adict.h"
@@ -116,7 +117,7 @@ int compile(char *s)
 			while(1)
 			{
 				++s;
-				if(*s=='"' && is_blankchar(*(s+1)))
+				if(*s=='"' && *(s+1)==' ')
 				{
 					 *(++s)='\0';
 					 ++s;
@@ -177,9 +178,11 @@ branchh	=&&branch;
 torr	=&&tor;
 casee	=&&_casee;
 droprr	=&&dropr;
+dropr44	=&&dropr4;
 doo	=&&_do;
 breakk	=&&_break;
 loopp	=&&_loop;
+forr	=&&_for;
 nextt	=&&_next;
 
 static	register cell tmpReg=0;	
@@ -196,11 +199,14 @@ static	register cell*DP;//stack pointer
 	code("bye",&&bye);
 	code("words",&&words);
 	code(".\"",&&printstr);
+	code(".",&&printnum);
 
 
 	code("sameAs",&&sameAs);
 	code("exec",&&exec);
 
+	code("i",&&_i);
+	code("continue",&&_continue);
 	code("while",&&_while);
 
 	code("branch",&&branch);
@@ -215,6 +221,7 @@ static	register cell*DP;//stack pointer
 	code("r>",&&rto);
 	code("r@",&&rat);
 	code("dropr",&&dropr);
+	code("4dropr",&&dropr4);
 
 	code(">x",&&tox);
 	code("x>",&&xto);
@@ -252,6 +259,7 @@ static	register cell*DP;//stack pointer
 	immediate("ends",(cell**)_ends);
 	immediate("do",(cell**)__do);
 	immediate("loop",(cell**)__loop);
+	immediate("for",(cell**)__for);
 	immediate("next",(cell**)__next);
 
 
@@ -380,21 +388,23 @@ tor:	POP(*(++RP))		NEXT
 rto:	PUSH(*RP--)		NEXT
 rat:	PUSH(*RP)		NEXT
 dropr:	RP--;			NEXT
+dropr4: RP-=4;			NEXT
 //X STACK
 tox:	POP(*(++XP))		NEXT
 xto:	PUSH(*XP--)		NEXT
 xat:	PUSH(*XP)		NEXT
 dropx:	XP--;			NEXT
 //+*- /
+add1:	DEBUG("++")TOS++; NEXT
+sub1:	DEBUG("--")TOS--; NEXT
 add:	TOS+=(*DP); DP--;	NEXT
 mul:	TOS*=(*DP); DP--;	NEXT
 sub:	TOS=(*DP)-TOS; DP--;	NEXT
 divv:	if (!TOS){printf("error: 0 / \n");goto init;}
 	TOS=(*DP)/TOS; DP--;	NEXT
-add1:	TOS++; NEXT
-sub1:	DEBUG("--")TOS--; NEXT
 
 branch:		IP=(cell**)( (cell)IP+(cell)(*(IP)) );	NEXT
+
 zbranch:	tmpReg=TOS;
 		_POP
 		if(tmpReg)
@@ -410,24 +420,36 @@ _casee:	DEBUG("case")
 
 _break:	DEBUG("break")
 	IP=(cell**)*RP; IP--; goto branch;
+
+_continue: DEBUG("break")
+	IP=(cell**)*RP; IP--;
+	IP=(cell**)( (cell)IP+(cell)(*(IP))-CELL );
+	NEXT
+
 _do:	DEBUG("do")
 	*(++RP)=(cell)(++IP); NEXT
+
 _loop:	DEBUG("loop")
-	IP=(cell**)(*RP); NEXT
+	IP=(cell**)*RP; NEXT
+
 _while:	DEBUG("while")
 	tmpReg=TOS; _POP 
 	if(tmpReg==0) goto _break;
 	NEXT
 
-_next:	DEBUG("next")
+_for:	DEBUG("for")
+	*(++RP)=TOS; _POP;
+	*(++RP)=TOS; _POP;
+	*(++RP)=TOS; _POP;
+	goto _do;
+
+_next:	DEBUG("next") //goto showSTACK;
+	*(RP-1)+=*(RP-3);
 	if(*(RP-1)<*(RP-2))
-	{
-		*(RP-1)+=*(RP-3);
-		IP=(cell**)*RP;
-	}
-	else	RP-=4;
+		goto _loop;
 	NEXT
-//IP=TOS; _POP; NEXT
+
+_i:	_PUSH; TOS=*(RP-1); NEXT
 
 
 
@@ -443,6 +465,9 @@ sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
 
 printstr:DEBUG("printstr")
 	printf("%s\n",(char*)*IP++);
+	NEXT
+printnum:DEBUG("printnum")
+	printf("%d ",TOS); _POP;
 	NEXT
 words:	dictIndexInit();
 	int d;
