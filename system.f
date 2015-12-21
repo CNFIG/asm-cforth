@@ -3,8 +3,6 @@
 : u<	swap u> ;
 : <	swap > ;
 : default drop ;
-: do	loop ;
-: x	if 22 22 else 33 33 endif ;
 : s
 switch 
 	1 case 11 break 
@@ -12,3 +10,8 @@ switch
 	3 case 33 break 
 	default 55 
 ends ;
+: x	if  11 ." "YES SIR" else ." "NO SIR" 22 endif 55 ;
+: xx	." 
+"I can say : "hello world".
+Then I say : "bye world"" ;
+: d	5 do -- dup while ." "looping" loop ;
