@@ -27,3 +27,5 @@ Then I say : "bye world"" ;
 		i 4 == if break endif 
 		i .  
 	next cr ;
+
+: 嘿	xx ; 
