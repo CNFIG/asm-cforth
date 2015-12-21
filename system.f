@@ -12,6 +12,18 @@ switch
 ends ;
 : x	if  11 ." "YES SIR" else ." "NO SIR" 22 endif 55 ;
 : xx	." 
-"I can say : "hello world".
+"I can say : "hello world"
 Then I say : "bye world"" ;
 : d	5 do -- dup while ." "looping" loop ;
+: cr	." 
+"
+" ;
+: f	0 6 1 for i . next cr ;
+: times	0 swap 1 ;
+: ff	6 times for i . next cr ;
+: fff	6 times 
+	for 
+		i 2 == if continue endif 
+		i 4 == if break endif 
+		i .  
+	next cr ;
