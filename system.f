@@ -28,4 +28,3 @@ Then I say : "bye world"" ;
 		i .  
 	next cr ;
 
-: 嘿	xx ; 
