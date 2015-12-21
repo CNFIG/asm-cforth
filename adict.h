@@ -75,23 +75,28 @@ void colon(char*s, cell** addr)
 	colonDictHead=w;
 }
 
-#define	IF_ELSE		*(++XP)=(cell)tmpLp++;
+void markAddr(){ *(++XP)=(cell)tmpLp++;}
 
-void _if()	{TMPLP_NEXT(zbranchh);	IF_ELSE;}
-void _endif()	{*(cell*)*XP=tmpLp-(cell**)*XP;	XP--;}
+void _if()	{TMPLP_NEXT(zbranchh);	markAddr();}
+void _endif()	{*(cell*)*XP=(cell)tmpLp-(cell)*XP;	XP--;}
 void _else()
 {
 	TMPLP_NEXT(branchh);
 	tmpLp++; _endif();
-	tmpLp--; IF_ELSE;
+	tmpLp--; markAddr();
 }
 
-void _switch()	{*(++RP)=0;}
-void _case()	{(*RP)++;TMPLP_NEXT(casee);IF_ELSE;}
+void _switch()	{TMPLP_NEXT(doo); *(++RP)=1; markAddr();}
+void _case()	{TMPLP_NEXT(casee); markAddr();}
+void _break()	{TMPLP_NEXT(breakk); if(*RP){_endif();} }
 void _ends()
 {
-	for(;(*RP)>0;(*RP)--)
-		_endif();
+	TMPLP_NEXT(droprr); 
+	tmpLp--; _endif(); tmpLp++;
 	RP--;
 }
-void _while()	{}
+
+void __do()	{TMPLP_NEXT(doo); *(++RP)=0; markAddr();}
+void __loop()	{TMPLP_NEXT(loopp); _ends();}
+//void __for()	{TMPLP_NEXT(forr); *(++RP)=0; markAddr();}
+//void __next()	{TMPLP_NEXT(nextt); _endif();}
