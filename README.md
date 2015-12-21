@@ -43,6 +43,7 @@ switch的另一种用法
 	ends
 
 
+其他情况请看system.f
 
 system.f里只能编译,不能解释
 
