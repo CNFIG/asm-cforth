@@ -105,6 +105,7 @@ int compile(char *s)
 		new_name=ignore_blankchar(s);
 		s=new_name;
 		s=split_word(s);
+		s=ignore_blankchar(s);
 	}
 	char *w, *charp;
 	int len;
@@ -437,7 +438,13 @@ _while:	DEBUG("while")
 	if(tmpReg==0) goto _break;
 	NEXT
 
-_for:	DEBUG("for")
+_for:	DEBUG("for")//*
+	if( !(*(DP-1)<*DP) ) 
+	{
+		DP-=2; _POP;
+		IP=(cell**)( (cell)IP+(cell)(*(IP))+CELL );
+		NEXT
+	}//*/
 	*(++RP)=TOS; _POP;
 	*(++RP)=TOS; _POP;
 	*(++RP)=TOS; _POP;
