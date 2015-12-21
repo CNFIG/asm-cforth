@@ -86,17 +86,17 @@ void _else()
 	tmpLp--; markAddr();
 }
 
-void _switch()	{TMPLP_NEXT(doo); *(++RP)=1; markAddr();}
+void _switch()	{TMPLP_NEXT(doo); *(++RP)=0; markAddr();}
 void _case()	{TMPLP_NEXT(casee); markAddr();}
-void _break()	{TMPLP_NEXT(breakk); if(*RP){_endif();} }
+void _break()	{TMPLP_NEXT(breakk); if(*RP==0){_endif();} }
 void _ends()
 {
-	TMPLP_NEXT(droprr); 
+	TMPLP_NEXT(*RP==4?dropr44:droprr); 
 	tmpLp--; _endif(); tmpLp++;
 	RP--;
 }
 
-void __do()	{TMPLP_NEXT(doo); *(++RP)=0; markAddr();}
+void __do()	{TMPLP_NEXT(doo); *(++RP)=1; markAddr();}
 void __loop()	{TMPLP_NEXT(loopp); _ends();}
-//void __for()	{TMPLP_NEXT(forr); *(++RP)=0; markAddr();}
-//void __next()	{TMPLP_NEXT(nextt); _endif();}
+void __for()	{TMPLP_NEXT(forr); *(++RP)=4; markAddr();}
+void __next()	{TMPLP_NEXT(nextt); _ends();}
