@@ -4,12 +4,14 @@
 
 #define	DEBUGER  CLOSE
 #ifndef	DEBUGER 
-#define	DEBUG(str)		printf("[DEBUG]%s\n",str);
+#define	DEBUG(str)		printf("[DEBUG]ENTERING:%s\n",str);
 #define	DEBUG2(str1,str2)	printf("[DEBUG]%s %s\n",str1,str2);
 #else
 #define	DEBUG(str)	
 #define	DEBUG2(str1,str2)	
 #endif 
+
+#define	P(X)	printf(X);
 
 typedef void(*fnp)();		//funcion pointer
 #define	cell	int		//only for 32bits
@@ -42,6 +44,10 @@ cell**branchh;
 cell**torr;
 cell**casee;
 cell**droprr;
+cell**doo;
+cell**breakk;
+cell**loopp;
+cell**nextt;
 
 
 
@@ -60,8 +66,8 @@ void dictIndexInit()
 
 int search_word(char *w)
 {
-	char check_code=computeCheckCode(w);
-
+	char check_code;
+	check_code=computeCheckCode(w);
 	dictIndexInit();
 	int d=0;
 	for (; d<dictNum; d++)
@@ -99,10 +105,31 @@ int compile(char *s)
 		s=new_name;
 		s=split_word(s);
 	}
-	char *w;
+	char *w, *charp;
+	int len;
 	while (*s!=0)
 	{
 		w=s;
+		if(*w=='"')
+		{
+			++w;
+			while(1)
+			{
+				++s;
+				if(*s=='"' && is_blankchar(*(s+1)))
+				{
+					 *(++s)='\0';
+					 ++s;
+					 break;
+				}
+			}
+			len=strlen(w);
+			charp=(char*)malloc(len+1);
+			strcpy(charp,w);
+			TMPLP_NEXT((cell**)charp);
+			*(charp+len-1)='\0';
+			continue;
+		}
 		s=split_word(s);
 
 		if(!search_word(w) )
@@ -150,6 +177,10 @@ branchh	=&&branch;
 torr	=&&tor;
 casee	=&&_casee;
 droprr	=&&dropr;
+doo	=&&_do;
+breakk	=&&_break;
+loopp	=&&_loop;
+nextt	=&&_next;
 
 static	register cell tmpReg=0;	
 static	register cell TOS;	
@@ -164,11 +195,13 @@ static	register cell*DP;//stack pointer
 	code("push",&&push);
 	code("bye",&&bye);
 	code("words",&&words);
+	code(".\"",&&printstr);
 
-	code("loop",&&loop);
 
 	code("sameAs",&&sameAs);
 	code("exec",&&exec);
+
+	code("while",&&_while);
 
 	code("branch",&&branch);
 	code("0branch",&&zbranch);
@@ -192,6 +225,9 @@ static	register cell*DP;//stack pointer
 	code("-",&&sub);
 	code("*",&&mul);
 	code("/",&&divv);
+	code("++",&&add1);
+	code("--",&&sub1);
+
 
 	code("ret",&&ret);
 	code(";",&&ret);
@@ -212,9 +248,11 @@ static	register cell*DP;//stack pointer
 	immediate("else",(cell**)_else);
 	immediate("switch",(cell**)_switch);
 	immediate("case",(cell**)_case);
-	immediate("break",(cell**)_else);
+	immediate("break",(cell**)_break);
 	immediate("ends",(cell**)_ends);
-	immediate("while",(cell**)_while);
+	immediate("do",(cell**)__do);
+	immediate("loop",(cell**)__loop);
+	immediate("next",(cell**)__next);
 
 
 	DP=DS-1;
@@ -297,7 +335,7 @@ showSTACK:
 		printf("%d ",*j++);
 	printf("\n");
 //*/
-/*
+//*
 	printf("RS> ");
 	cell *k=RS;
 	for (;k<=RP ;k++ )
@@ -327,8 +365,9 @@ cmd_line:
 
 
 //DATA STACK OPERATE 
-push:	PUSH((cell)*IP++)	NEXT
-dup:	DEBUG("entering: dup")
+push:	DEBUG("push")
+	PUSH((cell)*IP++)	NEXT
+dup:	DEBUG("dup")
 	_PUSH			NEXT
 over:	PUSH(*(DP-1))		NEXT
 drop:	_POP			NEXT
@@ -352,23 +391,42 @@ mul:	TOS*=(*DP); DP--;	NEXT
 sub:	TOS=(*DP)-TOS; DP--;	NEXT
 divv:	if (!TOS){printf("error: 0 / \n");goto init;}
 	TOS=(*DP)/TOS; DP--;	NEXT
+add1:	TOS++; NEXT
+sub1:	DEBUG("--")TOS--; NEXT
 
-branch:	IP+=(cell)(*(IP));	NEXT
-zbranch:	if(TOS)
+branch:		IP=(cell**)( (cell)IP+(cell)(*(IP)) );	NEXT
+zbranch:	tmpReg=TOS;
+		_POP
+		if(tmpReg)
 zbranch1:		IP++;
 		else
-zbranch2:		IP+=(cell)(*(IP));
-		_POP NEXT
+zbranch2:		goto branch;
+		NEXT
 
-_casee:	if(*DP==TOS)
-		{DP--;	goto zbranch1;}
-	else		goto zbranch2;
+_casee:	DEBUG("case")
+	if(*DP==TOS)
+		{DP--; _POP; goto zbranch1;}
+	else	{_POP; goto branch;}
 
-exec:	tmpReg=TOS; _POP; goto *(cell*)tmpReg;
-sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
+_break:	DEBUG("break")
+	IP=(cell**)*RP; IP--; goto branch;
+_do:	DEBUG("do")
+	*(++RP)=(cell)(++IP); NEXT
+_loop:	DEBUG("loop")
+	IP=(cell**)(*RP); NEXT
+_while:	DEBUG("while")
+	tmpReg=TOS; _POP 
+	if(tmpReg==0) goto _break;
+	NEXT
 
-loop:	IP=(cell**)*RP;	NEXT
-	
+_next:	DEBUG("next")
+	if(*(RP-1)<*(RP-2))
+	{
+		*(RP-1)+=*(RP-3);
+		IP=(cell**)*RP;
+	}
+	else	RP-=4;
+	NEXT
 //IP=TOS; _POP; NEXT
 
 
@@ -378,7 +436,14 @@ equ:	TOS-=*DP--; TOS= !TOS;	NEXT
 above:	TOS=((*DP--)>TOS);	NEXT
 uabove:	TOS=((unsigned cell)*(DP--) > (unsigned cell)TOS);
 	NEXT
-	
+
+
+exec:	tmpReg=TOS; _POP; goto *(cell*)tmpReg;
+sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
+
+printstr:DEBUG("printstr")
+	printf("%s\n",(char*)*IP++);
+	NEXT
 words:	dictIndexInit();
 	int d;
 	for (d=0;d<dictNum ; d++)
