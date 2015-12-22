@@ -112,7 +112,14 @@ int compile(char *s)
 	while (*s!=0)
 	{
 		w=s;
-		if(*w=='"')
+		if (*w=='/' && *(w+1)=='/')
+		{
+			while (!(*s==10 || *s==13))
+				s++;
+			s=ignore_blankchar(s);
+			w=s;
+		}
+		else if(*w=='"')
 		{
 			++w;
 			while(1)
@@ -213,6 +220,9 @@ static	register cell*DP;//stack pointer
 	code("branch",&&branch);
 	code("0branch",&&zbranch);
 
+	code("!",&&write);
+	code("@",&&read);
+
 	code("u>",&&uabove);
 	code(">",&&above);
 	code("==",&&equ);
@@ -229,10 +239,13 @@ static	register cell*DP;//stack pointer
 	code("x@",&&xat);
 	code("dropx",&&dropx);
 
+	code("=",&&assign);
 	code("+",&&add);
 	code("-",&&sub);
 	code("*",&&mul);
 	code("/",&&divv);
+	code("++s",&&adds1);
+	code("--s",&&subs1);
 	code("++",&&add1);
 	code("--",&&sub1);
 
@@ -337,7 +350,7 @@ showSTACK:
 		printf("%d ",TOS);
 	}
 	printf("\n");
-//*
+/*
 	printf("tmplist> ");
 	cell** j=tmpList;
 	while (*j != (&&showSTACK) )
@@ -395,14 +408,22 @@ tox:	POP(*(++XP))		NEXT
 xto:	PUSH(*XP--)		NEXT
 xat:	PUSH(*XP)		NEXT
 dropx:	XP--;			NEXT
-//+*- /
-add1:	DEBUG("++")TOS++; NEXT
-sub1:	DEBUG("--")TOS--; NEXT
+//+*-/=
+add1:	DEBUG("++")TOS++;	NEXT
+sub1:	DEBUG("--")TOS--;	NEXT
+adds1:	DEBUG("++s")(*DP)++;	NEXT
+subs1:	DEBUG("--s")(*DP)--;	NEXT
 add:	TOS+=(*DP); DP--;	NEXT
 mul:	TOS*=(*DP); DP--;	NEXT
 sub:	TOS=(*DP)-TOS; DP--;	NEXT
 divv:	if (!TOS){printf("error: 0 / \n");goto init;}
 	TOS=(*DP)/TOS; DP--;	NEXT
+assign:	*(cell*)((cell)*IP+9)=TOS; _POP; IP++; NEXT
+
+write:	DEBUG("!")
+	*(cell*)TOS=*DP--; _POP; NEXT
+read:	DEBUG("@")
+	TOS=*(cell*)TOS; NEXT
 
 branch:		IP=(cell**)( (cell)IP+(cell)(*(IP)) );	NEXT
 
@@ -441,9 +462,8 @@ _while:	DEBUG("while")
 _for:	DEBUG("for")//*
 	if( !(*(DP-1)<*DP) ) 
 	{
-		DP-=2; _POP;
-		IP=(cell**)( (cell)IP+(cell)(*(IP))+CELL );
-		NEXT
+		DP-=2; _POP; RP+=4; goto branch;
+		//IP=(cell**)( (cell)IP+(cell)(*(IP))+CELL ); NEXT
 	}//*/
 	*(++RP)=TOS; _POP;
 	*(++RP)=TOS; _POP;
