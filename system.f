@@ -18,13 +18,32 @@ Then I say : "bye world"" ;
 : cr	." 
 "
 " ;
-: f	0 6 1 for i . next cr ;
 : times	0 swap 1 ;
 : ff	6 times for i . next cr ;
-: fff	6 times 
+: f	 for i . next cr ;
+: fff	 6 times 
 	for 
 		i 2 == if continue endif 
 		i 4 == if break endif 
 		i .  
 	next cr ;
 
+: cell	4 ;
+: lambda r> ;
+: foo	." "I am foo" lambda ." "I am lambda" ;
+: fn	0 >r ;
+
+: recur
+r> cell - dup 
+r@ cell - @ swap !
+>r ;
+
+: n1!	// n -- result
+dup 1 == if ret endif
+dup -- recur * ;
+
+: tailRecur	dropr r> cell - >r ;
+
+: n2!	// n 1 -- result
+over 0 == if drops ret endif
+over * --s  tailRecur ;
