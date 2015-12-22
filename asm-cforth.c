@@ -112,10 +112,22 @@ int compile(char *s)
 	while (*s!=0)
 	{
 		w=s;
-		if (*w=='/' && *(w+1)=='/')
+		if (*s=='/')
 		{
-			while (!(*s==10 || *s==13))
+			if (*(s+1)=='/')
+			{
+				do{
+					s++;
+				}while (!(*s==10 || *s==13));
+			}
+			else if(*(s+1)=='*')
+			{
+				do{
+					s++;
+				}while(!(*s=='/' && *(s-1)=='*'));
 				s++;
+			}
+			
 			s=ignore_blankchar(s);
 			w=s;
 		}
@@ -292,26 +304,32 @@ loadsys:
 		loadInf="FAIL";
 	else
 	{
-		chp=cmdstr;
 //*
 		while(1)
 		{
-			ch=fgetc(fp);
-			putchar(ch);
-			*chp=ch;
-			if (*(chp-1)==';' && is_blankchar(*(chp-2)) && (is_blankchar(ch) || ch==EOF) )
-			{
-				*chp='\0';//printf("%s\n",cmdstr);
-				
-				if (!compile(cmdstr))
-				{
-					loadInf="FAIL";
-					break;
-				}
-				chp=cmdstr-1;
-			}
 			if(ch==EOF) break;
-			chp++;
+			do{
+				ch=fgetc(fp);
+				putchar(ch);
+			}while(ch!=':');
+
+			chp=cmdstr;
+			while (1)
+			{
+				*chp=ch;
+				ch=fgetc(fp);
+				putchar(ch);
+				if (*chp==';' && is_blankchar(*(chp-1)) && (is_blankchar(ch) || ch==EOF) )
+				{
+					*(chp+1)='\0';
+					if (compile(cmdstr))
+						break;
+					
+					loadInf="FAIL";
+					goto fileclose;					
+				}
+				chp++;
+			}			
 		}
 /*/
 		while (fgets(cmdstr,CMDSTR_LEN,fp))
@@ -326,6 +344,7 @@ loadsys:
 		}
 //*/
 	}
+fileclose:
 	fclose(fp);
 	printf("\n-------------------------");
 	printf(loadInf);	 printf(" to load system");
