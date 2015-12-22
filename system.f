@@ -19,9 +19,9 @@ Then I say : "bye world"" ;
 "
 " ;
 : times	0 swap 1 ;
-: ff	6 times for i . next cr ;
 : f	 for i . next cr ;
-: fff	 6 times 
+: ff	6 times for i . next cr ;
+: fff	6 times 
 	for 
 		i 2 == if continue endif 
 		i 4 == if break endif 
@@ -32,6 +32,11 @@ Then I say : "bye world"" ;
 : lambda r> ;
 : foo	." "I am foo" lambda ." "I am lambda" ;
 : fn	0 >r ;
+/*
+>>>foo
+>>>= fn
+>>>fn
+*/
 
 : recur
 r> cell - dup 
