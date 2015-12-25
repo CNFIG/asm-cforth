@@ -1,3 +1,4 @@
+: bb bye ;
 : true	1 ;
 : false	0 ;
 : u<	swap u> ;
@@ -18,8 +19,8 @@ Then I say : "bye world"" ;
 : cr	." 
 "
 " ;
+: f	0 6 1 for i . next cr ;
 : times	0 swap 1 ;
-: f	 for i . next cr ;
 : ff	6 times for i . next cr ;
 : fff	6 times 
 	for 
@@ -38,17 +39,50 @@ Then I say : "bye world"" ;
 >>>fn
 */
 
-: recur
+: self
 r> cell - dup 
 r@ cell - @ swap !
 >r ;
+
+: recur	sameAs self ;
 
 : n1!	// n -- result
 dup 1 == if ret endif
 dup -- recur * ;
 
-: tailRecur	dropr r> cell - >r ;
+: tailSelf	dropr r> cell - >r ;
+: tailRecur	 sameAs tailSelf ;
 
 : n2!	// n 1 -- result
 over 0 == if drops ret endif
 over * --s  tailRecur ;
+
+: loopn! // n 1 -- result
+do
+over 0 == if drops break endif
+over * --s 
+loop ;
+
+: args	1 2 3 4 ;
+
+: xx1		//n n n n -- r
++ + + ;
+
+: xx2	//n n n n -- r
+4 >>x
+x1 x2 + x3 + x4 + 
+4 xdrop ;
+//>>>args xx2
+
+: cur
+r> dup cell + >r
+@ >x 
+-- times for x@ exec next
+1 xdrop ;
+
+/*
+>>>( 1 2 3 4 ) cur +
+DS> 10
+>>>( 1 2 3 4 ) cur *
+DS> 10 24
+*/
