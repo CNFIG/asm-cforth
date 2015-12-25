@@ -11,6 +11,8 @@ switch
 	3 case 33 break 
 	default 55 
 ends ;
+
+
 : x	if  11 ." "YES SIR" else ." "NO SIR" 22 endif 55 ;
 : xx	." 
 "I can say : "hello world"
@@ -28,6 +30,17 @@ Then I say : "bye world"" ;
 		i 4 == if break endif 
 		i .  
 	next cr ;
+
+: fs	
+6 times 
+for 
+	i dup .
+	switch 
+		dup 3 < if ." "i<3" break 
+		dup 3 == if ." "i==3" break
+		dup 3 > if ." "i>3" break 
+	ends drop
+next cr ;
 
 : cell	4 ;
 : lambda r> ;
@@ -86,3 +99,4 @@ DS> 10
 >>>( 1 2 3 4 ) cur *
 DS> 10 24
 */
+
