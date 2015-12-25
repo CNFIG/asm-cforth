@@ -22,7 +22,7 @@ Then I say : "bye world"" ;
 "
 " ;
 : f	0 6 1 for i . next cr ;
-: times	0 swap 1 ;
+: times	0 -1 ;
 : ff	6 times for i . next cr ;
 : fff	6 times 
 	for 
