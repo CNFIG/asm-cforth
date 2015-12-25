@@ -91,7 +91,7 @@ void _case()	{TMPLP_NEXT(casee); markAddr();}
 void _break()	{TMPLP_NEXT(breakk); if(*RP==0){_endif();} }
 void _ends()
 {
-	TMPLP_NEXT(*RP==4?dropr44:droprr); 
+	TMPLP_NEXT((*RP==4?dropr44:droprr)); 
 	tmpLp--; _endif(); tmpLp++;
 	RP--;
 }
