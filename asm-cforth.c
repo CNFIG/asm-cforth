@@ -232,6 +232,7 @@ nextt	=&&_next;
 	code("i",&&_i);
 	code("continue",&&_continue);
 	code("while",&&_while);
+	code("_loop",&&_loop);
 
 	code("branch",&&branch);
 	code("0branch",&&zbranch);
@@ -495,7 +496,7 @@ _while:	DEBUG("while")
 	NEXT
 
 _for:	DEBUG("for")//*
-	if( !(*(DP-1)<*DP) ) 
+	if( *(DP-1)==*DP ) 
 	{
 		DP-=2; _POP; RP+=4; goto branch;
 		//IP=(cell**)( (cell)IP+(cell)(*(IP))+CELL ); NEXT
@@ -507,7 +508,7 @@ _for:	DEBUG("for")//*
 
 _next:	DEBUG("next") //goto showSTACK;
 	*(RP-1)+=*(RP-3);
-	if(*(RP-1)<*(RP-2))
+	if(*(RP-1)!=*(RP-2))
 		goto _loop;
 	NEXT
 
