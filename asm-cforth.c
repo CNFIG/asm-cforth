@@ -11,7 +11,7 @@
 #define	DEBUG2(str1,str2)	
 #endif 
 
-#define	P(X)	printf(X);
+#define	P(N)	printf(N);
 
 typedef void(*fnp)();		//funcion pointer
 #define	cell	int		//only for 32bits
@@ -23,9 +23,9 @@ cell CELL=sizeof(cell);
 #define	NEXT		tmpReg=(cell)*(IP++);goto *(cell*)tmpReg;
 #define	_PUSH		*(++DP)=TOS;
 #define	_POP		TOS=*(DP--);
-#define	PUSH(X)		_PUSH; TOS=X;
-#define	POP(X)		X=TOS; _POP;
-#define	TMPLP_NEXT(X)	*(tmpLp++)=(cell*)X;
+#define	PUSH(N)		_PUSH; TOS=N;
+#define	POP(N)		N=TOS; _POP;
+#define	TMPLP_NEXT(N)	*(tmpLp++)=(cell*)N;
 
 char EOS=' ';//end of string
 
@@ -205,10 +205,10 @@ loopp	=&&_loop;
 forr	=&&_for;
 nextt	=&&_next;
 
-static	register cell tmpReg=0;	
-static	register cell TOS;	
-static	register cell** IP;
-static	register cell*DP;//stack pointer
+	register cell tmpReg=0;	
+	register cell TOS;	
+	register cell** IP;
+	register cell*DP;//stack pointer
 
 	_showSTACK=&&showSTACK;
 	word_call_addr=(&&call);
@@ -218,6 +218,10 @@ static	register cell*DP;//stack pointer
 	code("push",&&push);
 	code("bye",&&bye);
 	code("words",&&words);
+	code("malloc",&&_malloc);
+
+
+
 	code(".\"",&&printstr);
 	code(".",&&printnum);
 
@@ -232,6 +236,8 @@ static	register cell*DP;//stack pointer
 	code("branch",&&branch);
 	code("0branch",&&zbranch);
 
+	code("c!",&&cwrite);
+	code("c@",&&cread);
 	code("!",&&write);
 	code("@",&&read);
 
@@ -249,8 +255,15 @@ static	register cell*DP;//stack pointer
 	code(">x",&&tox);
 	code("x>",&&xto);
 	code("x@",&&xat);
-	code("dropx",&&dropx);
+	code("xdrop",&&xdrop);
+	code(">>x",&&varx);
+	code("x4",&&x4);
+	code("x3",&&x3);
+	code("x2",&&x2);
+	code("x1",&&xat);
 
+	code("(",&&parenl);
+	code(")",&&parenr);
 	code("=",&&assign);
 	code("+",&&add);
 	code("-",&&sub);
@@ -295,7 +308,7 @@ static	register cell*DP;//stack pointer
 	tmpLp=tmpList;
 
 	FILE*fp;
-	char ch;
+	char ch=0;
 	char*chp;
 	char *loadInf="succeed";
 loadsys:
@@ -304,14 +317,15 @@ loadsys:
 		loadInf="FAIL";
 	else
 	{
-//*
 		while(1)
 		{
-			if(ch==EOF) break;
-			do{
+			while(ch!=':' && ch!=EOF)
+			{
 				ch=fgetc(fp);
 				putchar(ch);
-			}while(ch!=':');
+			}
+			
+			if(ch==EOF) break;
 
 			chp=cmdstr;
 			while (1)
@@ -319,7 +333,7 @@ loadsys:
 				*chp=ch;
 				ch=fgetc(fp);
 				putchar(ch);
-				if (*chp==';' && is_blankchar(*(chp-1)) && (is_blankchar(ch) || ch==EOF) )
+				if (*chp==';' && (is_blankchar(ch) || ch==EOF) )
 				{
 					*(chp+1)='\0';
 					if (compile(cmdstr))
@@ -329,25 +343,14 @@ loadsys:
 					goto fileclose;					
 				}
 				chp++;
-			}			
-		}
-/*/
-		while (fgets(cmdstr,CMDSTR_LEN,fp))
-		{
-			printf("%s",cmdstr);
-			checkcmd(cmdstr);
-			if (!compile(cmdstr))
-			{
-				loadInf="FAIL";
-				break;
 			}
+			//if(ch==EOF) break;
 		}
-//*/
 	}
 fileclose:
 	fclose(fp);
 	printf("\n-------------------------");
-	printf(loadInf);	 printf(" to load system");
+	printf(loadInf); printf(" to load system");
 	printf("-------------------------\n");
 	printf("asm-cforth version 0.1------made by ear\nplease input 'words' to see the dictionary\n");
 init:
@@ -376,11 +379,18 @@ showSTACK:
 		printf("%d ",*j++);
 	printf("\n");
 //*/
-//*
+/*
 	printf("RS> ");
 	cell *k=RS;
 	for (;k<=RP ;k++ )
 		printf("%d ",*k);
+	printf("\n");
+//*/
+/*
+	printf("XS> ");
+	cell *L=XS;
+	for (;L<=XP ;L++ )
+		printf("%d ",*L);
 	printf("\n");
 //*/
 
@@ -426,7 +436,6 @@ dropr4: RP-=4;			NEXT
 tox:	POP(*(++XP))		NEXT
 xto:	PUSH(*XP--)		NEXT
 xat:	PUSH(*XP)		NEXT
-dropx:	XP--;			NEXT
 //+*-/=
 add1:	DEBUG("++")TOS++;	NEXT
 sub1:	DEBUG("--")TOS--;	NEXT
@@ -437,6 +446,7 @@ mul:	TOS*=(*DP); DP--;	NEXT
 sub:	TOS=(*DP)-TOS; DP--;	NEXT
 divv:	if (!TOS){printf("error: 0 / \n");goto init;}
 	TOS=(*DP)/TOS; DP--;	NEXT
+
 assign:	*(cell*)((cell)*IP+9)=TOS; _POP; IP++; NEXT
 
 write:	DEBUG("!")
@@ -444,25 +454,31 @@ write:	DEBUG("!")
 read:	DEBUG("@")
 	TOS=*(cell*)TOS; NEXT
 
+cwrite:	DEBUG("c!")
+	*(char*)TOS=(char)*DP--; _POP; NEXT
+cread:	DEBUG("c@")
+	TOS=(cell)*(char*)TOS; NEXT
+
 branch:		IP=(cell**)( (cell)IP+(cell)(*(IP)) );	NEXT
 
 zbranch:	tmpReg=TOS;
-		_POP
-		if(tmpReg)
+			_POP
+			if(tmpReg)
 zbranch1:		IP++;
-		else
+			else
 zbranch2:		goto branch;
-		NEXT
+			NEXT
 
 _casee:	DEBUG("case")
 	if(*DP==TOS)
 		{DP--; _POP; goto zbranch1;}
-	else	{_POP; goto branch;}
+	else
+		{_POP; goto branch;}
 
 _break:	DEBUG("break")
 	IP=(cell**)*RP; IP--; goto branch;
 
-_continue: DEBUG("break")
+_continue: DEBUG("continue")
 	IP=(cell**)*RP; IP--;
 	IP=(cell**)( (cell)IP+(cell)(*(IP))-CELL );
 	NEXT
@@ -497,6 +513,36 @@ _next:	DEBUG("next") //goto showSTACK;
 
 _i:	_PUSH; TOS=*(RP-1); NEXT
 
+_malloc:
+	TOS=(cell)malloc(TOS);
+	if (TOS) NEXT;
+
+	printf("malloc error\n");
+	goto init;
+
+parenl:	
+	*(++RP)=(cell)DP;
+	NEXT
+parenr:
+	_PUSH;
+	TOS=((cell)DP-1-*(RP--))/CELL;
+	NEXT
+varx:
+//	tmpReg=TOS;
+	while (TOS--)
+	{
+		*(++XP)=*(DP--);
+	}
+//	*(++XP)=tmpReg;
+	_POP; NEXT
+xdrop:
+	XP-=TOS; _POP; NEXT
+x2:
+	PUSH(*(XP-1)); NEXT
+x3:
+	PUSH(*(XP-2)); NEXT
+x4:
+	PUSH(*(XP-3)); NEXT
 
 
 //cmp sign
