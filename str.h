@@ -25,6 +25,7 @@ char * split_word(char *s)
 
 int is_num(char *s)
 {
+	if(*s=='-') s++;
 	while (*s !=0)
 	{
 		if (!isdigit(*s)) return 0;
