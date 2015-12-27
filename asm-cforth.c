@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define	DEBUGER  CLOSE
 #ifndef	DEBUGER 
@@ -31,7 +32,7 @@ char EOS=' ';//end of string
 
 #define	STACK_LEN	256
 cell DS[STACK_LEN], RS[STACK_LEN], XS[STACK_LEN];//(data | return | X)stack
-static	cell*RP;//stack pointer
+	cell*RP;//stack pointer
 static	cell*XP;//stack pointer	
 
 cell *_showSTACK;
@@ -218,10 +219,14 @@ nextt	=&&_next;
 	code("push",&&push);
 	code("bye",&&bye);
 	code("words",&&words);
+	code("timeStart",&&timeStart);
+	code("timeEnd",&&timeEnd);
 	code("malloc",&&_malloc);
 
 
-
+//	code("fib",&&fib);
+	
+	code(".f",&&printfloat);
 	code(".\"",&&printstr);
 	code(".",&&printnum);
 
@@ -244,7 +249,9 @@ nextt	=&&_next;
 
 	code("u>",&&uabove);
 	code(">",&&above);
+	code("<",&&below);
 	code("==",&&equ);
+	code("!=",&&nequ);
 
 	
 	code(">r",&&tor);
@@ -323,7 +330,7 @@ loadsys:
 			while(ch!=':' && ch!=EOF)
 			{
 				ch=fgetc(fp);
-				putchar(ch);
+		//		putchar(ch);
 			}
 			
 			if(ch==EOF) break;
@@ -333,7 +340,7 @@ loadsys:
 			{
 				*chp=ch;
 				ch=fgetc(fp);
-				putchar(ch);
+			//	putchar(ch);
 				if (*chp==';' && (is_blankchar(ch) || ch==EOF) )
 				{
 					*(chp+1)='\0';
@@ -547,8 +554,10 @@ x4:
 
 
 //cmp sign
+nequ:	TOS-=*DP--;	NEXT
 equ:	TOS-=*DP--; TOS= !TOS;	NEXT
 above:	TOS=((*DP--)>TOS);	NEXT
+below:	TOS=((*DP--)<TOS);	NEXT
 uabove:	TOS=((unsigned cell)*(DP--) > (unsigned cell)TOS);
 	NEXT
 
@@ -557,11 +566,21 @@ exec:	tmpReg=TOS; _POP; goto *(cell*)tmpReg;
 sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
 
 printstr:DEBUG("printstr")
-	printf("%s\n",(char*)*IP++);
+	printf("%s",(char*)*IP++);
 	NEXT
 printnum:DEBUG("printnum")
 	printf("%d ",TOS); _POP;
 	NEXT
+
+	float*np;
+printfloat:DEBUG("printfloat")
+	_PUSH
+	np=(float*)DP;
+	printf("%f ",*np);
+	--DP;
+	_POP
+	NEXT
+
 words:	dictIndexInit();
 	int d;
 	for (d=0;d<dictNum ; d++)
@@ -574,7 +593,17 @@ words:	dictIndexInit();
 	}
 	NEXT
 		
+ 
+timeStart:
+	*(++XP)=clock();
+	NEXT;
+timeEnd:
+	_PUSH;
+	*(float*)(++DP)=((float)(clock()-*(XP--))/CLK_TCK) ;
+	_POP;
+	NEXT;
 
+//fib:TOS=Fib_Common(TOS);NEXT
 
 
 
