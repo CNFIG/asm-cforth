@@ -2,7 +2,6 @@
 : true	1 ;
 : false	0 ;
 : u<	swap u> ;
-: <	swap > ;
 : default drop ;
 : s
 switch 
@@ -57,7 +56,8 @@ r> cell - dup
 r@ cell - @ swap !
 >r ;
 
-: recur	sameAs self ;
+: recur sameAs self ;
+: recurse sameAs self ;
 
 : n1!	// n -- result
 dup 1 == if ret endif
@@ -100,3 +100,25 @@ DS> 10
 DS> 10 24
 */
 
+: fib1	//n--r
+dup 3 < if drop 1 ret endif
+-- dup -- self swap self + ;
+
+: fib2	//n--r
+dup 3 < if drop 1 ret endif
+>x 1 1 x> 2 - 
+times for over + swap next drop ;
+
+: timer
+r> dup cell + >r @
+timeStart exec timeEnd ." "time=" .f cr ;
+
+: n // n 0 -- result
+do
+over 0 > while 
+over + swap -- swap 
+loop swap drop ;
+
+: f fib1 ;
+: test1 40 timer f  ;
+: test2 100000000 0 timer n drop ;
