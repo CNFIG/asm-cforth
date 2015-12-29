@@ -1,5 +1,5 @@
 # asm-cforth
-一个接近ASM的高效cforth
+一个接近asm forth的高效cforth
 
 forth是一种堆栈机,使用后缀表达式,冒号是定义函数的符号,以栈为参数传递和传回返回值的通道, 在栈上运算数据
 
@@ -34,11 +34,11 @@ forth是一种堆栈机,使用后缀表达式,冒号是定义函数的符号,以
 switch的另一种用法
 
 
-	true switch
+	switch
 
-		1 2 < case 11 break
+		1 2 < if 11 break
   
-		1 2 == case 22 break
+		1 2 == if 22 break
   
 	ends
 
