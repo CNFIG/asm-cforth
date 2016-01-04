@@ -15,42 +15,42 @@
 #define	P(N)	printf(N);
 
 typedef void(*fnp)();		//funcion pointer
-#define	cell	int		//only for 32bits
+#define	CELL	int		//only for 32bits
 
-cell CELL=sizeof(cell); 
+CELL cell=sizeof(CELL); 
 
 #define	SYSPATH	".\\system.f"
 
-#define	NEXT		tmpReg=(cell)*(IP++);goto *(cell*)tmpReg;
+#define	NEXT		TMPR=(CELL)*(IP++);goto *(CELL*)TMPR;
 #define	_PUSH		*(++DP)=TOS;
 #define	_POP		TOS=*(DP--);
 #define	PUSH(N)		_PUSH; TOS=N;
 #define	POP(N)		N=TOS; _POP;
-#define	TMPLP_NEXT(N)	*(tmpLp++)=(cell*)N;
+#define	TMPLP_NEXT(N)	*(tmpLp++)=(CELL*)N;
 
 char EOS=' ';//end of string
 
 #define	STACK_LEN	256
-cell DS[STACK_LEN], RS[STACK_LEN], XS[STACK_LEN];//(data | return | X)stack
-	cell*RP;//stack pointer
-static	cell*XP;//stack pointer	
+CELL DS[STACK_LEN], RS[STACK_LEN], XS[STACK_LEN];//(data | return | X)stack
+	CELL*RP;//stack pointer
+	CELL*XP;//stack pointer	
 
-cell *_showSTACK;
+CELL *_showSTACK;
 char *new_name=NULL;
 
 
-cell**pushh;
-cell**zbranchh;
-cell**branchh;
-cell**torr;
-cell**casee;
-cell**droprr;
-cell**dropr44;
-cell**doo;
-cell**breakk;
-cell**loopp;
-cell**forr;
-cell**nextt;
+CELL**pushh;
+CELL**zbranchh;
+CELL**branchh;
+CELL**torr;
+CELL**casee;
+CELL**droprr;
+CELL**dropr44;
+CELL**doo;
+CELL**breakk;
+CELL**loopp;
+CELL**forr;
+CELL**nextt;
 
 
 #include "adict.h"
@@ -148,7 +148,7 @@ int compile(char *s)
 			len=strlen(w);
 			charp=(char*)malloc(len+1);
 			strcpy(charp,w);
-			TMPLP_NEXT((cell**)charp);
+			TMPLP_NEXT((CELL**)charp);
 			*(charp+len-1)='\0';
 			continue;
 		}
@@ -206,10 +206,10 @@ loopp	=&&_loop;
 forr	=&&_for;
 nextt	=&&_next;
 
-	register cell tmpReg=0;	
-	register cell TOS;	
-	register cell** IP;
-	register cell*DP;//stack pointer
+	register CELL TMPR=0;	
+	register CELL TOS;	
+	register CELL** IP;
+	register CELL*DP;//stack pointer
 
 	_showSTACK=&&showSTACK;
 	word_call_addr=(&&call);
@@ -297,17 +297,17 @@ nextt	=&&_next;
 
 
 	//immeDict
-	immediate("if",(cell**)_if);
-	immediate("endif",(cell**)_endif);
-	immediate("else",(cell**)_else);
-	immediate("switch",(cell**)_switch);
-	immediate("case",(cell**)_case);
-	immediate("break",(cell**)_break);
-	immediate("ends",(cell**)_ends);
-	immediate("do",(cell**)__do);
-	immediate("loop",(cell**)__loop);
-	immediate("for",(cell**)__for);
-	immediate("next",(cell**)__next);
+	immediate("if",(CELL**)_if);
+	immediate("endif",(CELL**)_endif);
+	immediate("else",(CELL**)_else);
+	immediate("switch",(CELL**)_switch);
+	immediate("case",(CELL**)_case);
+	immediate("break",(CELL**)_break);
+	immediate("ends",(CELL**)_ends);
+	immediate("do",(CELL**)__do);
+	immediate("loop",(CELL**)__loop);
+	immediate("for",(CELL**)__for);
+	immediate("next",(CELL**)__next);
 
 
 	DP=DS-1;
@@ -371,7 +371,7 @@ init:
 
 showSTACK:
 	printf("DS> ");
-	cell*i;
+	CELL*i;
 	i=DS+1;
 	if (DP>=DS)
 	{
@@ -382,21 +382,21 @@ showSTACK:
 	printf("\n");
 /*
 	printf("tmplist> ");
-	cell** j=tmpList;
+	CELL** j=tmpList;
 	while (*j != (&&showSTACK) )
 		printf("%d ",*j++);
 	printf("\n");
 //*/
 /*
 	printf("RS> ");
-	cell *k=RS;
+	CELL *k=RS;
 	for (;k<=RP ;k++ )
 		printf("%d ",*k);
 	printf("\n");
 //*/
 /*
 	printf("XS> ");
-	cell *L=XS;
+	CELL *L=XS;
 	for (;L<=XP ;L++ )
 		printf("%d ",*L);
 	printf("\n");
@@ -425,15 +425,15 @@ cmd_line:
 
 //DATA STACK OPERATE 
 push:	DEBUG("push")
-	PUSH((cell)*IP++)	NEXT
+	PUSH((CELL)*IP++)	NEXT
 dup:	DEBUG("dup")
 	_PUSH			NEXT
 over:	PUSH(*(DP-1))		NEXT
 drop:	_POP			NEXT
 drops:	DP--;			NEXT
-dups:	tmpReg=*DP;*(++DP)=tmpReg;			NEXT
-swap:	tmpReg=*DP; *DP=TOS; TOS=tmpReg;		NEXT
-swaps:	tmpReg=*DP; *DP=*(DP-1); *(DP-1)=tmpReg;	NEXT
+dups:	TMPR=*DP;*(++DP)=TMPR;			NEXT
+swap:	TMPR=*DP; *DP=TOS; TOS=TMPR;		NEXT
+swaps:	TMPR=*DP; *DP=*(DP-1); *(DP-1)=TMPR;	NEXT
 //RETURN STACK
 tor:	POP(*(++RP))		NEXT
 rto:	PUSH(*RP--)		NEXT
@@ -445,33 +445,37 @@ tox:	POP(*(++XP))		NEXT
 xto:	PUSH(*XP--)		NEXT
 xat:	PUSH(*XP)		NEXT
 //+*-/=
-add1:	DEBUG("++")TOS++;	NEXT
-sub1:	DEBUG("--")TOS--;	NEXT
+add1:	DEBUG("++") TOS++;	NEXT
+sub1:	DEBUG("--") TOS--;	NEXT
 adds1:	DEBUG("++s")(*DP)++;	NEXT
 subs1:	DEBUG("--s")(*DP)--;	NEXT
-add:	TOS+=(*DP); DP--;	NEXT
-mul:	TOS*=(*DP); DP--;	NEXT
-sub:	TOS=(*DP)-TOS; DP--;	NEXT
+add:	TOS+=(*DP--);	NEXT
+mul:	TOS*=(*DP--);	NEXT
+sub:	TOS=(*DP--)-TOS;	NEXT
 divv:	if (!TOS){printf("error: 0 / \n");goto init;}
-	TOS=(*DP)/TOS; DP--;	NEXT
+	TOS=(*DP--)/TOS;	NEXT
 
-assign:	*(cell*)((cell)*IP+9)=TOS; _POP; IP++; NEXT
+assign:	*(CELL*)((CELL)*IP+9)=TOS; _POP; IP++; NEXT
 
 write:	DEBUG("!")
-	*(cell*)TOS=*DP--; _POP; NEXT
+	*(CELL*)TOS=*DP--; _POP; NEXT
 read:	DEBUG("@")
-	TOS=*(cell*)TOS; NEXT
+	TOS=*(CELL*)TOS; NEXT
 
 cwrite:	DEBUG("c!")
 	*(char*)TOS=(char)*DP--; _POP; NEXT
 cread:	DEBUG("c@")
-	TOS=(cell)*(char*)TOS; NEXT
+	TOS=(CELL)*(char*)TOS; NEXT
 
-branch:		IP=(cell**)( (cell)IP+(cell)(*(IP)) );	NEXT
+branch:
+	TMPR=(CELL)(*(IP));
+	IP=(CELL**)( (CELL)IP+TMPR );
+//	IP=(CELL**)( (CELL)IP+(CELL)(*(IP)) );
+	NEXT
 
-zbranch:	tmpReg=TOS;
+zbranch:	TMPR=TOS;
 			_POP
-			if(tmpReg)
+			if(TMPR)
 zbranch1:		IP++;
 			else
 zbranch2:		goto branch;
@@ -484,29 +488,29 @@ _casee:	DEBUG("case")
 		{_POP; goto branch;}
 
 _break:	DEBUG("break")
-	IP=(cell**)*RP; IP--; goto branch;
+	IP=(CELL**)*RP; IP--; goto branch;
 
 _continue: DEBUG("continue")
-	IP=(cell**)*RP; IP--;
-	IP=(cell**)( (cell)IP+(cell)(*(IP))-CELL );
+	IP=(CELL**)*RP; IP--;
+	IP=(CELL**)( (CELL)IP+(CELL)(*(IP))-cell );
 	NEXT
 
 _do:	DEBUG("do")
-	*(++RP)=(cell)(++IP); NEXT
+	*(++RP)=(CELL)(++IP); NEXT
 
 _loop:	DEBUG("loop")
-	IP=(cell**)*RP; NEXT
+	IP=(CELL**)*RP; NEXT
 
 _while:	DEBUG("while")
-	tmpReg=TOS; _POP 
-	if(tmpReg==0) goto _break;
+	TMPR=TOS; _POP 
+	if(TMPR==0) goto _break;
 	NEXT
 
 _for:	DEBUG("for")//*
 	if( *(DP-1)==*DP ) 
 	{
 		DP-=2; _POP; RP+=4; goto branch;
-		//IP=(cell**)( (cell)IP+(cell)(*(IP))+CELL ); NEXT
+		//IP=(CELL**)( (CELL)IP+(CELL)(*(IP))+cell ); NEXT
 	}//*/
 	*(++RP)=TOS; _POP;
 	*(++RP)=TOS; _POP;
@@ -522,26 +526,26 @@ _next:	DEBUG("next") //goto showSTACK;
 _i:	_PUSH; TOS=*(RP-1); NEXT
 
 _malloc:
-	TOS=(cell)malloc(TOS);
+	TOS=(CELL)malloc(TOS);
 	if (TOS) NEXT;
 
 	printf("malloc error\n");
 	goto init;
 
 parenl:	
-	*(++RP)=(cell)DP;
+	*(++RP)=(CELL)DP;
 	NEXT
 parenr:
 	_PUSH;
-	TOS=((cell)DP-1-*(RP--))/CELL;
+	TOS=((CELL)DP-1-*(RP--))/cell;
 	NEXT
 varx:
-//	tmpReg=TOS;
+//	TMPR=TOS;
 	while (TOS--)
 	{
 		*(++XP)=*(DP--);
 	}
-//	*(++XP)=tmpReg;
+//	*(++XP)=TMPR;
 	_POP; NEXT
 xdrop:
 	XP-=TOS; _POP; NEXT
@@ -558,12 +562,12 @@ nequ:	TOS-=*DP--;	NEXT
 equ:	TOS-=*DP--; TOS= !TOS;	NEXT
 above:	TOS=((*DP--)>TOS);	NEXT
 below:	TOS=((*DP--)<TOS);	NEXT
-uabove:	TOS=((unsigned cell)*(DP--) > (unsigned cell)TOS);
+uabove:	TOS=((unsigned CELL)*(DP--) > (unsigned CELL)TOS);
 	NEXT
 
 
-exec:	tmpReg=TOS; _POP; goto *(cell*)tmpReg;
-sameAs:	tmpReg=(cell)*IP; IP=(cell**)*RP--; goto *(cell*)tmpReg;
+exec:	TMPR=TOS; _POP; goto *(CELL*)TMPR;
+sameAs:	TMPR=(CELL)*IP; IP=(CELL**)*RP--; goto *(CELL*)TMPR;
 
 printstr:DEBUG("printstr")
 	printf("%s",(char*)*IP++);
@@ -609,11 +613,11 @@ timeEnd:
 
 //_wordNeck:	goto *(int*)word_call_addr;
 ret:	DEBUG("entering: ret")	
-	IP=(cell**)*RP--;	NEXT
+	IP=(CELL**)*RP--;	NEXT
 
 call:	DEBUG("entering: call")
-	*(++RP)=(cell)IP;
-	IP=(cell**)( tmpReg+ wordNeck_len);
+	*(++RP)=(CELL)IP;
+	IP=(CELL**)( TMPR+ wordNeck_len);
 	NEXT
 
 bye:	return 0;
