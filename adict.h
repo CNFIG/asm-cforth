@@ -2,7 +2,7 @@ struct _word
 {
 	char*name;
 	char checkCode;
-	cell**addr;
+	CELL**addr;
 	struct _word * next;
 };
 typedef struct _word word;
@@ -10,8 +10,8 @@ typedef struct _word word;
 //
 #define	CMDSTR_LEN	1024
 char cmdstr[CMDSTR_LEN];
-cell*tmpList[CMDSTR_LEN/4];
-cell** tmpLp=tmpList;
+CELL*tmpList[CMDSTR_LEN/4];
+CELL** tmpLp=tmpList;
 
 word *immeDictHead=NULL, *codeDictHead=NULL, *colonDictHead=NULL;
 
@@ -23,7 +23,7 @@ char computeCheckCode(char*s)
 	return *(--s)+code;
 }
 
-word * creatWord(char*s, cell** addr)
+word * creatWord(char*s, CELL** addr)
 {
 	word *w=(word*)malloc(sizeof(word));
 	w->checkCode=computeCheckCode(s);
@@ -32,14 +32,14 @@ word * creatWord(char*s, cell** addr)
 	return w;
 }
 
-void immediate(char*s, cell** addr)
+void immediate(char*s, CELL** addr)
 {
 	word *w=creatWord(s,addr);
 	w->next=immeDictHead;
 	immeDictHead=w;
 }
 
-cell** code(char*s, cell** addr)
+CELL** code(char*s, CELL** addr)
 {
 	word *w=creatWord(s,addr);
 	w->next=codeDictHead;
@@ -50,7 +50,7 @@ cell** code(char*s, cell** addr)
 #define wordNeck_len	5
 char*word_call_addr;
 //char*wordNeck;
-void colon(char*s, cell** addr)
+void colon(char*s, CELL** addr)
 {
 	word *w=(word*)malloc(sizeof(word));
 	w->checkCode=computeCheckCode(s);
@@ -58,8 +58,8 @@ void colon(char*s, cell** addr)
 	w->name=(char*)malloc(strlen(s)+1);
 	strcpy(w->name,s);
 
-	cell n=(cell)tmpLp-(cell)tmpList;
-	w->addr=(cell**)malloc(wordNeck_len+n);
+	CELL n=(CELL)tmpLp-(CELL)tmpList;
+	w->addr=(CELL**)malloc(wordNeck_len+n);
 
 	//jmp to label call
 	char*charP=(char*)w->addr; 
@@ -75,10 +75,10 @@ void colon(char*s, cell** addr)
 	colonDictHead=w;
 }
 
-void markAddr(){ *(++XP)=(cell)tmpLp++;}
+void markAddr(){ *(++XP)=(CELL)tmpLp++;}
 
 void _if()	{TMPLP_NEXT(zbranchh);	markAddr();}
-void _endif()	{*(cell*)*XP=(cell)tmpLp-(cell)*XP;	XP--;}
+void _endif()	{*(CELL*)*XP=(CELL)tmpLp-(CELL)*XP;	XP--;}
 void _else()
 {
 	TMPLP_NEXT(branchh);
