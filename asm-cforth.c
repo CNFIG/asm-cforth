@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <time.h>
 
 #define	DEBUGER  CLOSE
@@ -21,9 +22,9 @@ CELL cell=sizeof(CELL);
 
 #define	SYSPATH	".\\system.f"
 
-#define	NEXT		TMPR=(CELL)*(IP++);goto *(CELL*)TMPR;
-#define	_PUSH		*(++DP)=TOS;
-#define	_POP		TOS=*(DP--);
+#define	NEXT		TMPR=(CELL)*IP;IP++;goto *(CELL*)TMPR;
+#define	_PUSH		++DP;*DP=TOS;
+#define	_POP		TOS=*DP;DP--;
 #define	PUSH(N)		_PUSH; TOS=N;
 #define	POP(N)		N=TOS; _POP;
 #define	TMPLP_NEXT(N)	*(tmpLp++)=(CELL*)N;
@@ -205,11 +206,11 @@ breakk	=&&_break;
 loopp	=&&_loop;
 forr	=&&_for;
 nextt	=&&_next;
-
-	register CELL TMPR=0;	
-	register CELL TOS;	
-	register CELL** IP;
-	register CELL*DP;//stack pointer
+	
+	register CELL TOS=0;
+	register CELL TMPR=0;	//eax?
+	register CELL*DP=0;//stack pointer
+	register CELL**IP=0;
 
 	_showSTACK=&&showSTACK;
 	word_call_addr=(&&call);
@@ -277,6 +278,8 @@ nextt	=&&_next;
 	code("-",&&sub);
 	code("*",&&mul);
 	code("/",&&divv);
+	code("%",&&mod);
+	code("mod",&&mod);
 	code("++s",&&adds1);
 	code("--s",&&subs1);
 	code("++",&&add1);
@@ -424,64 +427,152 @@ cmd_line:
 
 
 //DATA STACK OPERATE 
-push:	DEBUG("push")
-	PUSH((CELL)*IP++)	NEXT
-dup:	DEBUG("dup")
-	_PUSH			NEXT
-over:	PUSH(*(DP-1))		NEXT
-drop:	_POP			NEXT
-drops:	DP--;			NEXT
-dups:	TMPR=*DP;*(++DP)=TMPR;			NEXT
-swap:	TMPR=*DP; *DP=TOS; TOS=TMPR;		NEXT
-swaps:	TMPR=*DP; *DP=*(DP-1); *(DP-1)=TMPR;	NEXT
-//RETURN STACK
-tor:	POP(*(++RP))		NEXT
-rto:	PUSH(*RP--)		NEXT
-rat:	PUSH(*RP)		NEXT
-dropr:	RP--;			NEXT
-dropr4: RP-=4;			NEXT
-//X STACK
-tox:	POP(*(++XP))		NEXT
-xto:	PUSH(*XP--)		NEXT
-xat:	PUSH(*XP)		NEXT
-//+*-/=
-add1:	DEBUG("++") TOS++;	NEXT
-sub1:	DEBUG("--") TOS--;	NEXT
-adds1:	DEBUG("++s")(*DP)++;	NEXT
-subs1:	DEBUG("--s")(*DP)--;	NEXT
-add:	TOS+=(*DP--);	NEXT
-mul:	TOS*=(*DP--);	NEXT
-sub:	TOS=(*DP--)-TOS;	NEXT
-divv:	if (!TOS){printf("error: 0 / \n");goto init;}
-	TOS=(*DP--)/TOS;	NEXT
-
-assign:	*(CELL*)((CELL)*IP+9)=TOS; _POP; IP++; NEXT
-
-write:	DEBUG("!")
-	*(CELL*)TOS=*DP--; _POP; NEXT
-read:	DEBUG("@")
-	TOS=*(CELL*)TOS; NEXT
-
-cwrite:	DEBUG("c!")
-	*(char*)TOS=(char)*DP--; _POP; NEXT
-cread:	DEBUG("c@")
-	TOS=(CELL)*(char*)TOS; NEXT
-
-branch:
-	TMPR=(CELL)(*(IP));
-	IP=(CELL**)( (CELL)IP+TMPR );
-//	IP=(CELL**)( (CELL)IP+(CELL)(*(IP)) );
+push:	DEBUG("push")// -- N
+	PUSH((CELL)*IP)	
+	IP++;
 	NEXT
 
-zbranch:	TMPR=TOS;
-			_POP
-			if(TMPR)
-zbranch1:		IP++;
-			else
-zbranch2:		goto branch;
-			NEXT
+dup:	DEBUG("dup")// N -- N N
+	_PUSH
+	NEXT
 
-_casee:	DEBUG("case")
+over:	//N1 N2 -- N1 N2 N1
+	TMPR=*DP;
+	_PUSH
+	TOS=TMPR;
+	NEXT
+
+drop:	//N -- 
+	_POP
+	NEXT
+
+drops:	//N1 N2 -- N2
+	DP--;
+	NEXT
+
+dups:	//N1 N2 -- N1 N1 N2
+	TMPR=*DP;
+	DP++;
+	*DP=TMPR;
+	NEXT
+
+swap:	//N1 N2 -- N2 N1
+	TMPR=*DP;
+	*DP=TOS;
+	TOS=TMPR;	
+	NEXT
+
+swaps:	//N1 N2 N3 -- N2 N1 N3
+	TMPR=*DP;
+	*DP=*(DP-1);
+	*(DP-1)=TMPR;
+	NEXT
+
+//RETURN STACK
+tor:	//N --//>r
+	RP++;
+	POP(*RP)
+	NEXT
+
+rto:	// -- N //r>
+	PUSH(*RP)
+	RP--;
+	NEXT
+
+rat:	// -- N //r@
+	PUSH(*RP)	NEXT
+dropr:	//addr -R- 
+	RP--;	NEXT
+dropr4: RP-=4;	NEXT
+//X STACK
+tox:	XP++;
+	POP(*XP)
+	NEXT
+
+xto:	PUSH(*XP)
+	XP--;
+	NEXT
+
+xat:	PUSH(*XP)
+	NEXT
+
+//+*-/=
+add1:	TOS++;	NEXT
+sub1:	TOS--;	NEXT
+adds1:	(*DP)++;	NEXT
+subs1:	(*DP)--;	NEXT
+//N1 N2 -- N
+add:	TOS+=(*DP); DP--; NEXT
+sub:	TMPR=TOS;
+	_POP
+	TOS-=TMPR;
+	NEXT
+
+mul:	TMPR=*DP;
+	DP--;
+	TMPR*=TOS;
+	TOS=TMPR;
+	NEXT
+
+divv:	if (!TOS){printf("[error]: 0/ \n");goto init;}
+	TMPR=*DP;
+	DP--;
+	TOS=TMPR/TOS;
+	NEXT
+
+mod:	if (!TOS){printf("[error]: 0/ \n");goto init;}
+	TMPR=*DP;
+	DP--;
+	TOS=TMPR%TOS;
+	NEXT
+
+assign:	//N -- 
+	TMPR=(CELL)*IP;
+	TMPR+=9;		//neck_len+push_len=9
+	*(CELL*)TMPR=TOS;
+	_POP
+	IP++;
+	NEXT
+
+write:	DEBUG("!")//N ADDR -- 
+	TMPR=TOS;
+	_POP
+	*(CELL*)TMPR=TOS;
+	_POP;
+	NEXT
+
+read:	DEBUG("@")//ADDR -- N
+	TMPR=TOS;
+	TOS=*(CELL*)TMPR;
+	NEXT
+
+cwrite:	DEBUG("c!")//N ADDR -- 
+	TMPR=TOS;
+	_POP
+	*(char*)TMPR=(char)TOS;
+	_POP;
+	NEXT
+
+cread:	DEBUG("c@")//ADDR -- N
+	TMPR=TOS;
+	TOS=*(char*)TMPR;
+	NEXT
+
+branch:// -- 
+	TMPR=(CELL)*IP;
+	IP=(CELL**)( (CELL)IP+TMPR );
+	NEXT
+
+zbranch://FLAG -- 
+	TMPR=TOS;
+	_POP
+	if(TMPR)
+zbranch1:	IP++;
+	else
+zbranch2:	goto branch;
+	NEXT
+
+_casee:	DEBUG("case")//N N' -- (N==N'?  || N )
 	if(*DP==TOS)
 		{DP--; _POP; goto zbranch1;}
 	else
@@ -492,52 +583,67 @@ _break:	DEBUG("break")
 
 _continue: DEBUG("continue")
 	IP=(CELL**)*RP; IP--;
-	IP=(CELL**)( (CELL)IP+(CELL)(*(IP))-cell );
+	IP=(CELL**)*IP; IP--;
+	//IP=(CELL**)( (CELL)IP+(CELL)(*(IP))-cell );
 	NEXT
 
-_do:	DEBUG("do")
-	*(++RP)=(CELL)(++IP); NEXT
+_do:	DEBUG("do")// -R- ADDR
+	RP++;
+	IP++;
+	*RP=(CELL)IP;
+	NEXT
 
 _loop:	DEBUG("loop")
-	IP=(CELL**)*RP; NEXT
+	IP=(CELL**)*RP;
+	NEXT
 
-_while:	DEBUG("while")
-	TMPR=TOS; _POP 
+_while:	DEBUG("while")//FLAG --
+	TMPR=TOS;
+	_POP 
 	if(TMPR==0) goto _break;
 	NEXT
 
-_for:	DEBUG("for")//*
-	if( *(DP-1)==*DP ) 
+_for:	DEBUG("for")//BEGIN UNTIL STEP -- 
+	TMPR=*DP;
+	if( *(DP-1)==TMPR ) 
 	{
 		DP-=2; _POP; RP+=4; goto branch;
 		//IP=(CELL**)( (CELL)IP+(CELL)(*(IP))+cell ); NEXT
-	}//*/
+	}
 	*(++RP)=TOS; _POP;
 	*(++RP)=TOS; _POP;
 	*(++RP)=TOS; _POP;
 	goto _do;
 
-_next:	DEBUG("next") //goto showSTACK;
-	*(RP-1)+=*(RP-3);
-	if(*(RP-1)!=*(RP-2))
+_next:	DEBUG("next") 
+	TMPR=*(RP-3);	*(RP-1)+=TMPR;//BEGIN += STEP
+	TMPR=*(RP-2);
+	if(*(RP-1)!=TMPR)
 		goto _loop;
 	NEXT
 
-_i:	_PUSH; TOS=*(RP-1); NEXT
+_i:	// -- i
+	_PUSH; TOS=*(RP-1); NEXT
 
 _malloc:
 	TOS=(CELL)malloc(TOS);
 	if (TOS) NEXT;
 
-	printf("malloc error\n");
+	printf("[error]:malloc \n");
 	goto init;
 
-parenl:	
+parenl:	// -R- ADDR
 	*(++RP)=(CELL)DP;
 	NEXT
-parenr:
+parenr:	// -- N		// ADDR -R-
+	TMPR=(CELL)DP;
+	TMPR--;
+	TMPR-=*RP;
+	RP--;
+	TMPR/=cell;
 	_PUSH;
-	TOS=((CELL)DP-1-*(RP--))/cell;
+	TOS=TMPR;
+	//TOS=((CELL)DP-1-*(RP--))/cell;
 	NEXT
 varx:
 //	TMPR=TOS;
@@ -557,7 +663,8 @@ x4:
 	PUSH(*(XP-3)); NEXT
 
 
-//cmp sign
+//cmp: !=  ==  >  <  u>
+//N1 N2 -- FLAG
 nequ:	TOS-=*DP--;	NEXT
 equ:	TOS-=*DP--; TOS= !TOS;	NEXT
 above:	TOS=((*DP--)>TOS);	NEXT
@@ -567,7 +674,10 @@ uabove:	TOS=((unsigned CELL)*(DP--) > (unsigned CELL)TOS);
 
 
 exec:	TMPR=TOS; _POP; goto *(CELL*)TMPR;
-sameAs:	TMPR=(CELL)*IP; IP=(CELL**)*RP--; goto *(CELL*)TMPR;
+sameAs:	TMPR=(CELL)*IP;
+	IP=(CELL**)*RP;
+	RP--;
+	goto *(CELL*)TMPR;
 
 printstr:DEBUG("printstr")
 	printf("%s",(char*)*IP++);
@@ -576,12 +686,12 @@ printnum:DEBUG("printnum")
 	printf("%d ",TOS); _POP;
 	NEXT
 
-	float*np;
+//	float*np;
 printfloat:DEBUG("printfloat")
 	_PUSH
-	np=(float*)DP;
-	printf("%f ",*np);
-	--DP;
+//	np=(float*)DP;
+	printf("%f ",*(float*)DP);
+	DP--;
 	_POP
 	NEXT
 
@@ -617,7 +727,9 @@ ret:	DEBUG("entering: ret")
 
 call:	DEBUG("entering: call")
 	*(++RP)=(CELL)IP;
-	IP=(CELL**)( TMPR+ wordNeck_len);
+	TMPR+=wordNeck_len;
+	IP=(CELL**)TMPR;
+//	IP=(CELL**)( TMPR+ wordNeck_len);
 	NEXT
 
 bye:	return 0;
